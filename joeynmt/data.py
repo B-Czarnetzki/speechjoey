@@ -304,7 +304,7 @@ class AudioDataset(TranslationDataset):
         audio_path = os.path.expanduser(path + audio_ext)
 
         # emb_size is 3 x num_mels because deltas are used
-        if audio_level == "mel_fb_white_et_al":
+        if audio_level == "mel_fb_weiss_et_al":
             num = num / 3
 
         examples = []
@@ -338,7 +338,7 @@ class AudioDataset(TranslationDataset):
                             features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
                                 sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
 
-                        elif audio_level == "mel_fb_white_et_al":
+                        elif audio_level == "mel_fb_weiss_et_al":
                             features_orig = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=int(
                                 512), win_length=int(sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
                             # features = librosa.core.logamplitude(features)
