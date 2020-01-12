@@ -43,16 +43,12 @@ class Batch:
             self.mfcc = torch_batch.mfcc
             max_tensor = max(self.mfcc, key=lambda x: x.shape[0])
             max_dim = max_tensor.shape[0]
-            print(max_dim)
             padded_mfcc = []
             for x in self.mfcc:
                 m = nn.ZeroPad2d((0, 0, 0, max_dim - x.shape[0]))
                 current_ten = m(x)
                 padded_mfcc.append(current_ten)
-                #padded_mfcc.append(current_ten.permute(1, 0, 2))
 
-            for ten in padded_mfcc:
-                print(ten.size())
             self.mfcc = torch.stack(padded_mfcc)
 
         if hasattr(torch_batch, "trg"):

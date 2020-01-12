@@ -206,8 +206,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     max_sent_length = data_cfg.get("max_sent_length", sys.maxsize)
     max_audio_length = data_cfg.get("max_audio_length", sys.maxsize)
     number = cfg["model"]["encoder"]["embeddings"]["embedding_dim"]
-    #assert number <= 80,\
-     #   "The number of used audio features could not be higher than the number of Mel bands. Change the encoder's embedding_dim."
+    # assert number <= 80,\
+    #   "The number of used audio features could not be higher than the number of Mel bands. Change the encoder's embedding_dim."
     check_ratio = data_cfg.get("input_length_ratio", sys.maxsize)
     audio_features = data_cfg["audio_features_level"]
     htk = data_cfg["use_htk"]
@@ -324,7 +324,6 @@ class AudioDataset(TranslationDataset):
                     text_line = text_line.strip()
                     audio_line = audio_line.strip()
                     if text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
-                        # print(os.path.getsize(audio_line))
                         y, sr = librosa.load(audio_line, sr=None)
                         # overwrite default values for the window width of 25 ms and stride of 10 ms (for sr = 16kHz)
                         # (n_fft : length of the FFT window, hop_length : number of samples between successive frames)
@@ -349,7 +348,6 @@ class AudioDataset(TranslationDataset):
                             features = np.concatenate(
                                 (features_orig, features_delta_1, features_delta_2), axis=0)
 
-                        # print(features.shape)
                         featuresT = features.T
                         if scale == "norm":
                             # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
@@ -366,8 +364,6 @@ class AudioDataset(TranslationDataset):
                             # center to the mean and component-wise scale to unit variance
                             featuresT = sklearn.preprocessing.scale(featuresT)
                         featureS = torch.Tensor(featuresT)
-
-                        print(featureS.size())
 
                         if char_level:
                             # generate a line with <unk> of given size
