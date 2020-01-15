@@ -270,20 +270,20 @@ class SpeechRecurrentEncoder(Encoder):
             lila_out2 = torch.relu(self.lila2(lila_out1))
 
         lila_out2 = lila_out2.unsqueeze(1)
-
-        #print("Convolution input shape: ", lila_out2.size())
+        print("\nlila1 output shape: ", lila_out1.size())
+        print("Convolution input shape: ", lila_out2.size())
         # 2 convolutional layers
         conv_out1 = self.conv1(lila_out2)
-        #print("convolution 1 output shape: ", conv_out1.size())
+        print("convolution 1 output shape: ", conv_out1.size())
 
         # layer normalization
         if self.layer_norm:
             conv_out1 = self.norm1(conv_out1)
 
         conv_out2 = self.conv2(conv_out1)
-        #print("Convolution 2 output shape: ", conv_out2.size())
+        print("Convolution 2 output shape: ", conv_out2.size())
         conv_out2 = conv_out2.transpose(1, 2)
-        #print("Convolution 2 output tranposed: ", conv_out2.size())
+        print("Convolution 2 output tranposed: ", conv_out2.size())
 
         conv_out2 = conv_out2.flatten(start_dim=2)
 
@@ -291,7 +291,7 @@ class SpeechRecurrentEncoder(Encoder):
         if self.layer_norm:
             conv_out2 = self.norm2(conv_out2)
 
-        #print("convolution 2 output flattend: ", conv_out2.size())
+        print("convolution 2 output flattend: ", conv_out2.size())
         # apply dropout to the rnn input
         conv_do = self.rnn_input_dropout(conv_out2)
 
