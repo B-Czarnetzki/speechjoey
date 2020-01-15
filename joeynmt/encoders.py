@@ -153,8 +153,8 @@ class SpeechRecurrentEncoder(Encoder):
     def __init__(self,
                  rnn_type: str = "gru",
                  hidden_size: int = 1,
-                 linear_hidden_size_1=int 1,
-                 linear_hidden_size_2=int 1,
+                 linear_hidden_size_1: int = 1,
+                 linear_hidden_size_2: int = 1,
                  emb_size: int = 1,
                  num_layers: int = 1,
                  dropout: float = 0.,
@@ -192,12 +192,12 @@ class SpeechRecurrentEncoder(Encoder):
             nn.Conv2d(1, 16,
                       kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, stride=2, padding=0))
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=0))
         self.conv2 = nn.Sequential(
             nn.Conv2d(16, 16,
                       kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, stride=2, padding=0))
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=0))
         self.layer_norm = layer_norm
         self.emb_norm = emb_norm
         if self.layer_norm:
@@ -269,55 +269,33 @@ class SpeechRecurrentEncoder(Encoder):
             lila_out1 = torch.relu(self.lila1(embed_src))
             lila_out2 = torch.relu(self.lila2(lila_out1))
 
-        lila_out2 = lila_out2.transpose(1, 2)
+        lila_out2 = lila_out2.unsqueeze(1)
 
-        print("Convolution input shape: ", lila_out2.size())
+        #print("Convolution input shape: ", lila_out2.size())
         # 2 convolutional layers
         conv_out1 = self.conv1(lila_out2)
-        print("convolution 1 shape: ", conv_out1.size())
-        conv_out1 = conv_out1.transpose(1, 2)
-        print("Convolution 1 transposedd shape: ", conv_out1.size())
+        #print("convolution 1 output shape: ", conv_out1.size())
 
         # layer normalization
         if self.layer_norm:
             conv_out1 = self.norm1(conv_out1)
 
-        if not self.same_weights:
-            if self.activation == "tanh":
-                lila_out3 = torch.tanh(self.lila3(conv_out1))
-            else:
-                lila_out3 = torch.relu(self.lila3(conv_out1))
-        else:
-            if self.activation == "tanh":
-                lila_out3 = torch.tanh(self.lila2(conv_out1))
-            else:
-                lila_out3 = torch.relu(self.lila2(conv_out1))
-
-        lila_out3 = lila_out3.transpose(1, 2)
-
-        conv_out2 = self.conv2(lila_out3)
+        conv_out2 = self.conv2(conv_out1)
+        #print("Convolution 2 output shape: ", conv_out2.size())
         conv_out2 = conv_out2.transpose(1, 2)
-        print("Convolution 2 output transposed: ", conv_out2.size())
+        #print("Convolution 2 output tranposed: ", conv_out2.size())
+
+        conv_out2 = conv_out2.flatten(start_dim=2)
 
         # layer normalization
         if self.layer_norm:
             conv_out2 = self.norm2(conv_out2)
 
-        if not self.same_weights:
-            if self.activation == "tanh":
-                lila_out4 = torch.tanh(self.lila4(conv_out2))
-            else:
-                lila_out4 = torch.relu(self.lila4(conv_out2))
-        else:
-            if self.activation == "tanh":
-                lila_out4 = torch.tanh(self.lila2(conv_out2))
-            else:
-                lila_out4 = torch.relu(self.lila2(conv_out2))
-
+        #print("convolution 2 output flattend: ", conv_out2.size())
         # apply dropout to the rnn input
-        lila_do = self.rnn_input_dropout(lila_out4)
+        conv_do = self.rnn_input_dropout(conv_out2)
 
-        packed = pack_padded_sequence(lila_do, conv_length, batch_first=True)
+        packed = pack_padded_sequence(conv_do, conv_length, batch_first=True)
         output, hidden = self.rnn(packed)
 
         #pylint: disable=unused-variable
