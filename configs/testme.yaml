@@ -6,7 +6,7 @@ data: # specify your data here
     src: "de"  # src language: expected suffix of train files, e.g. "train.de"
     trg: "en"  # trg language
     audio: "src" # the language for the speech processing output, default: src
-    audio_features_level: "mel_fb" # default: "mfcc", other option: "mel_fb"
+    audio_features_level: "mfcc" # default: "mfcc", other option: "mel_fb"
     use_htk: True # use HTK formula or Slaney for for mel filters
     #scale: "None" # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "develop/raw/head"  # training data
@@ -60,19 +60,21 @@ model:  # specify your model architecture here
     encoder:
         rnn_type: "gru" # type of recurrent unit to use, either "gru" or "lstm", default: "lstm"
         embeddings:
-            embedding_dim: 20 # size of embeddings
+            embedding_dim: 40 # size of embeddings
             scale: False  # scale the embeddings by sqrt of their size, default: False
             freeze: True  # if True, embeddings are not updated during training
         hidden_size: 256 # size of RNN
+        linear_hidden_size_1: 256 # size of first input linear layer
+        linear_hidden_size_2: 128 # size of second linear layer
         bidirectional: True # use a bi-directional encoder, default: True
         dropout: 0.2  # apply dropout to the inputs to the RNN, default: 0.0
         num_layers: 3 # stack this many layers of equal size, default: 1
         freeze: False  # if True, encoder parameters are not updated during training (does not include embedding parameters)
         activation: "tanh" # activation type for 2 layers following the src embeddings (only for speech), default: "relu", other options: "tanh"
         last_activation: "relu" # non-linear activation after RNNs in speech encoder, default: "None", other options: "tanh", "relu"
-        layer_norm: True # layer normalization layers for 2 CNNs and RNN layer, default: False
+        layer_norm: False # layer normalization layers for 2 CNNs and RNN layer, default: False
         emb_norm: False # layer normalization layers for embeddings, default: False
-        same_weights: True # use same weights for linear layers, default: False
+        same_weights: False # use same weights for linear layers, default: False
     decoder:
         rnn_type: "gru"
         embeddings:

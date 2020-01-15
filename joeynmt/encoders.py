@@ -12,6 +12,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from joeynmt.helpers import freeze_params
 
 #pylint: disable=abstract-method
+
+
 class Encoder(nn.Module):
     """
     Base encoder class
@@ -70,7 +72,7 @@ class RecurrentEncoder(Encoder):
         if freeze:
             freeze_params(self)
 
-    #pylint: disable=invalid-name, unused-argument
+    # pylint: disable=invalid-name, unused-argument
     def _check_shapes_input_forward(self, embed_src: Tensor, src_length: Tensor,
                                     mask: Tensor) -> None:
         """
@@ -151,6 +153,8 @@ class SpeechRecurrentEncoder(Encoder):
     def __init__(self,
                  rnn_type: str = "gru",
                  hidden_size: int = 1,
+                 linear_hidden_size_1=int 1,
+                 linear_hidden_size_2=int 1,
                  emb_size: int = 1,
                  num_layers: int = 1,
                  dropout: float = 0.,
@@ -180,20 +184,18 @@ class SpeechRecurrentEncoder(Encoder):
         self.rnn_input_dropout = torch.nn.Dropout(p=dropout, inplace=False)
         self.type = rnn_type
         self.emb_size = emb_size
-        self.lila1 = nn.Linear(emb_size, hidden_size)
-        self.lila2 = nn.Linear(hidden_size, hidden_size)
-        self.same_weights = same_weights
-        if not self.same_weights:
-            self.lila3 = nn.Linear(hidden_size, hidden_size)
-            self.lila4 = nn.Linear(hidden_size, hidden_size)
+        self.lila1 = nn.Linear(emb_size, linear_hidden_size_1)
+        self.lila2 = nn.Linear(linear_hidden_size_1, linear_hidden_size_2)
         self.activation = activation
         self.last_activation = last_activation
         self.conv1 = nn.Sequential(
-            nn.Conv1d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(1, 16,
+                      kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, stride=2, padding=0))
         self.conv2 = nn.Sequential(
-            nn.Conv1d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(16, 16,
+                      kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, stride=2, padding=0))
         self.layer_norm = layer_norm
@@ -201,14 +203,15 @@ class SpeechRecurrentEncoder(Encoder):
         if self.layer_norm:
             self.norm1 = nn.LayerNorm(hidden_size)
             self.norm2 = nn.LayerNorm(hidden_size)
-            self.norm_out = nn.LayerNorm(2 * hidden_size if bidirectional else hidden_size)
+            self.norm_out = nn.LayerNorm(
+                2 * hidden_size if bidirectional else hidden_size)
         if self.emb_norm:
             self.norm_emb = nn.LayerNorm(emb_size)
 
         rnn = nn.GRU if rnn_type == "gru" else nn.LSTM
 
         self.rnn = rnn(
-            hidden_size, hidden_size, num_layers, batch_first=True,
+            4 * linear_hidden_size_2, hidden_size, num_layers, batch_first=True,
             bidirectional=bidirectional,
             dropout=dropout if num_layers > 1 else 0.)
 
@@ -217,9 +220,9 @@ class SpeechRecurrentEncoder(Encoder):
         if freeze:
             freeze_params(self)
 
-    #pylint: disable=invalid-name, unused-argument
+    # pylint: disable=invalid-name, unused-argument
     def _check_shapes_input_forward(self, embed_src: Tensor, src_length: Tensor) \
-                                    -> None:
+            -> None:
         """
         Make sure the shape of the inputs to `self.forward` are correct.
         Same input semantics as `self.forward`.
@@ -232,8 +235,8 @@ class SpeechRecurrentEncoder(Encoder):
         assert len(src_length.shape) == 1
 
     #pylint: disable=arguments-differ
-    def forward(self, embed_src: Tensor, src_length: Tensor, mask: Tensor, \
-            conv_length: Tensor) -> (Tensor, Tensor):
+    def forward(self, embed_src: Tensor, src_length: Tensor, mask: Tensor,
+                conv_length: Tensor) -> (Tensor, Tensor):
         """
         Applies a bidirectional RNN to sequence of embeddings x.
         The input mini-batch x needs to be sorted by src length.
@@ -266,11 +269,14 @@ class SpeechRecurrentEncoder(Encoder):
             lila_out1 = torch.relu(self.lila1(embed_src))
             lila_out2 = torch.relu(self.lila2(lila_out1))
 
-        lila_out2 = lila_out2.transpose(1,2)
+        lila_out2 = lila_out2.transpose(1, 2)
 
+        print("Convolution input shape: ", lila_out2.size())
         # 2 convolutional layers
         conv_out1 = self.conv1(lila_out2)
-        conv_out1 = conv_out1.transpose(1,2)
+        print("convolution 1 shape: ", conv_out1.size())
+        conv_out1 = conv_out1.transpose(1, 2)
+        print("Convolution 1 transposedd shape: ", conv_out1.size())
 
         # layer normalization
         if self.layer_norm:
@@ -287,10 +293,11 @@ class SpeechRecurrentEncoder(Encoder):
             else:
                 lila_out3 = torch.relu(self.lila2(conv_out1))
 
-        lila_out3 = lila_out3.transpose(1,2)
+        lila_out3 = lila_out3.transpose(1, 2)
 
         conv_out2 = self.conv2(lila_out3)
-        conv_out2 = conv_out2.transpose(1,2)
+        conv_out2 = conv_out2.transpose(1, 2)
+        print("Convolution 2 output transposed: ", conv_out2.size())
 
         # layer normalization
         if self.layer_norm:
@@ -353,4 +360,3 @@ class SpeechRecurrentEncoder(Encoder):
     @property
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.rnn)
-
