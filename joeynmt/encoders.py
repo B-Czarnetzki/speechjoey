@@ -282,7 +282,7 @@ class SpeechRecurrentEncoder(Encoder):
 
         conv_out2 = self.conv2(conv_out1)
         #print("Convolution 2 output shape: ", conv_out2.size())
-        conv_out2 = conv_out2.transpose(1, 2)
+        conv_out2 = conv_out2.transpose(1, 3).transpose(1, 2)
         #print("Convolution 2 output tranposed: ", conv_out2.size())
 
         conv_out2 = conv_out2.flatten(start_dim=2)
