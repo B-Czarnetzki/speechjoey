@@ -12,6 +12,7 @@ import os
 import queue
 
 import numpy as np
+import math
 
 import torch
 from torch import Tensor
@@ -54,7 +55,8 @@ class TrainManager:
         self.logger = make_logger(model_dir=self.model_dir)
         self.logging_freq = train_config.get("logging_freq", 100)
         self.valid_report_file = "{}/validations.txt".format(self.model_dir)
-        self.tb_writer = SummaryWriter(log_dir=self.model_dir+"/tensorboard/")
+        self.tb_writer = SummaryWriter(
+            log_dir=self.model_dir + "/tensorboard/")
 
         # model
         self.model = model
@@ -162,7 +164,7 @@ class TrainManager:
             "best_ckpt_iteration": self.best_ckpt_iteration,
             "model_state": self.model.state_dict(),
             "optimizer_state": self.optimizer.state_dict(),
-            "scheduler_state": self.scheduler.state_dict() if \
+            "scheduler_state": self.scheduler.state_dict() if
             self.scheduler is not None else None,
         }
         torch.save(state, model_path)
@@ -196,7 +198,7 @@ class TrainManager:
         self.optimizer.load_state_dict(model_checkpoint["optimizer_state"])
 
         if model_checkpoint["scheduler_state"] is not None and \
-                        self.scheduler is not None:
+                self.scheduler is not None:
             self.scheduler.load_state_dict(model_checkpoint["scheduler_state"])
 
         # restore counts
@@ -211,17 +213,24 @@ class TrainManager:
 
     def train_and_validate(self, train_data: Dataset, valid_data: Dataset) \
             -> None:
-        
         """
         Train the model and validate it from time to time on the validation set.
 
         :param train_data: training data
         :param valid_data: validation data
         """
-            
+
         train_iter = make_data_iter(train_data, batch_size=self.batch_size,
                                     train=True, shuffle=self.shuffle)
-        
+
+        # For last batch in epoch batch_multiplier needs to be adjusted to fit the number of leftover training examples
+        leftover_batch_size = len(
+            train_data) % (self.batch_multiplier * self.batch_size)
+
+        # Problem occurs if counter can't be counted down to 0
+        batch_mutliplier_problem = self.batch_size * \
+            self.batch_multiplier - leftover_batch_size >= self.batch_size
+
         for epoch_no in range(self.epochs):
             self.logger.info("EPOCH %d", epoch_no + 1)
 
@@ -233,13 +242,14 @@ class TrainManager:
             start = time.time()
             total_valid_duration = 0
             processed_tokens = self.total_tokens
-            count = self.batch_multiplier - 1
+            self.current_batch_multiplier = self.batch_multiplier
+            count = self.current_batch_multiplier - 1
             epoch_loss = 0
 
-            for batch in iter(train_iter):
+            for i, batch in enumerate(iter(train_iter)):
                 # reactivate training
                 self.model.train()
-                
+
                 # create a Batch object from torchtext batch
                 batch = Batch(batch, self.pad_index, use_cuda=self.use_cuda)
 
@@ -247,14 +257,35 @@ class TrainManager:
                 # see https://medium.com/@davidlmorton/
                 # increasing-mini-batch-size-without-increasing-
                 # memory-6794e10db672
+
+                # Set Batch_mutliplier to number of leftover examples for last batch in epoch
+                if self.batch_multiplier > 1 and batch_mutliplier_problem and i == len(train_iter) - math.ceil(leftover_batch_size / self.batch_size):
+                    self.current_batch_multiplier = math.ceil(
+                        leftover_batch_size / self.batch_size)
+                    count = self.current_batch_multiplier - 1
+
                 update = count == 0
                 # print(count, update, self.steps)
                 batch_loss = self._train_batch(batch, update=update)
-                self.tb_writer.add_scalar("train/train_batch_loss", batch_loss,
-                                          self.steps)
+
+                # Accumalte batch_loss if batch multiplier > 1
+                if self.batch_multiplier > 1:
+                    if count == self.current_batch_multiplier - 1:
+                        accumalted_batch_loss = batch_loss
+                    else:
+                        accumalted_batch_loss += batch_loss
+
+                if self.batch_multiplier > 1 and update:
+                    batch_loss = accumalted_batch_loss
+
+                # Only save train loss after full batch_loss of current step has been computed
+                if update:
+                    self.tb_writer.add_scalar("train/train_batch_loss", batch_loss,
+                                              self.steps)
                 count = self.batch_multiplier if update else count
                 count -= 1
-                epoch_loss += batch_loss.detach().cpu().numpy()
+                if update:
+                    epoch_loss += batch_loss.detach().cpu().numpy()
 
                 # log learning progress
                 if self.steps % self.logging_freq == 0 and update:
@@ -331,8 +362,8 @@ class TrainManager:
                     self.logger.info(
                         'Validation result at epoch %d, step %d: %s: %f, '
                         'loss: %f, ppl: %f, duration: %.4fs',
-                            epoch_no+1, self.steps, self.eval_metric,
-                            valid_score, valid_loss, valid_ppl, valid_duration)
+                        epoch_no + 1, self.steps, self.eval_metric,
+                        valid_score, valid_loss, valid_ppl, valid_duration)
 
                     # store validation set outputs
                     self._store_outputs(valid_hypotheses)
@@ -353,13 +384,13 @@ class TrainManager:
             if self.stop:
                 self.logger.info(
                     'Training ended since minimum lr %f was reached.',
-                     self.learning_rate_min)
+                    self.learning_rate_min)
                 break
 
-            self.logger.info('Epoch %d: total training loss %.2f', epoch_no+1,
+            self.logger.info('Epoch %d: total training loss %.2f', epoch_no + 1,
                              epoch_loss)
         else:
-            self.logger.info('Training ended after %d epochs.', epoch_no+1)
+            self.logger.info('Training ended after %d epochs.', epoch_no + 1)
         self.logger.info('Best validation result at step %d: %f %s.',
                          self.best_ckpt_iteration, self.best_ckpt_score,
                          self.early_stopping_metric)
@@ -385,7 +416,7 @@ class TrainManager:
 
         norm_batch_loss = batch_loss / normalizer
         # division needed since loss.backward sums the gradients until updated
-        norm_batch_multiply = norm_batch_loss / self.batch_multiplier
+        norm_batch_multiply = norm_batch_loss / self.current_batch_multiplier
 
         # compute gradients
         norm_batch_multiply.backward()
@@ -405,7 +436,7 @@ class TrainManager:
         # increment token counter
         self.total_tokens += batch.ntokens
 
-        return norm_batch_loss
+        return norm_batch_multiply
 
     def _add_report(self, valid_score: float, valid_ppl: float,
                     valid_loss: float, eval_metric: str,
@@ -503,26 +534,28 @@ def train(cfg_file: str) -> None:
     # load the data
     if cfg.get("speech", True):
         train_data, dev_data, test_data, src_vocab, trg_vocab = load_audio_data(
-        cfg=cfg)
+            cfg=cfg)
     else:
         train_data, dev_data, test_data, src_vocab, trg_vocab = load_data(
-        data_cfg=cfg["data"])
+            data_cfg=cfg["data"])
 
     # build an encoder-decoder model
     if cfg.get("speech", True):
-        model = build_speech_model(cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
+        model = build_speech_model(
+            cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
     else:
-        model = build_model(cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
+        model = build_model(
+            cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
 
     # for training management, e.g. early stopping and model selection
     trainer = TrainManager(model=model, config=cfg)
 
     # store copy of original training config in model dir
-    shutil.copy2(cfg_file, trainer.model_dir+"/config.yaml")
+    shutil.copy2(cfg_file, trainer.model_dir + "/config.yaml")
 
     # log all entries of config
     log_cfg(cfg, trainer.logger)
-    
+
     log_data_info(train_data=train_data, valid_data=dev_data,
                   test_data=test_data, src_vocab=src_vocab, trg_vocab=trg_vocab,
                   logging_function=trainer.logger.info)
@@ -548,7 +581,7 @@ def train(cfg_file: str) -> None:
             trainer.logger.warning("Checkpoint %s does not exist. "
                                    "Skipping testing.", checkpoint_path)
             if trainer.best_ckpt_iteration == 0 \
-                and trainer.best_ckpt_score in [np.inf, -np.inf]:
+                    and trainer.best_ckpt_score in [np.inf, -np.inf]:
                 trainer.logger.warning(
                     "It seems like no checkpoint was written, "
                     "since no improvement was obtained over the initial model.")
@@ -574,7 +607,7 @@ def train(cfg_file: str) -> None:
         if "trg" in test_data.fields:
             decoding_description = "Greedy decoding" if beam_size == 0 else \
                 "Beam search decoding with beam size = {} and alpha = {}"\
-                    .format(beam_size, beam_alpha)
+                .format(beam_size, beam_alpha)
             trainer.logger.info("Test data result: %f %s [%s]",
                                 score, trainer.eval_metric,
                                 decoding_description)
@@ -589,6 +622,7 @@ def train(cfg_file: str) -> None:
             for h in hypotheses:
                 f.write(h + "\n")
         trainer.logger.info("Test translations saved to: %s", output_path_set)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Joey-NMT')
