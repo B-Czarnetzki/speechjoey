@@ -258,7 +258,7 @@ class TrainManager:
                 # increasing-mini-batch-size-without-increasing-
                 # memory-6794e10db672
 
-                # Set Batch_mutliplier to number of leftover examples for last batch in epoch
+                # Set Batch_mutliplier to fit number of leftover examples for last batch in epoch
                 if self.batch_multiplier > 1 and batch_mutliplier_problem and i == len(train_iter) - math.ceil(leftover_batch_size / self.batch_size):
                     self.current_batch_multiplier = math.ceil(
                         leftover_batch_size / self.batch_size)
