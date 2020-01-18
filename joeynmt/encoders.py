@@ -190,14 +190,10 @@ class SpeechRecurrentEncoder(Encoder):
         self.last_activation = last_activation
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, 16,
-                      kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=0))
+                      kernel_size=3, stride=2, padding=1))
         self.conv2 = nn.Sequential(
             nn.Conv2d(16, 16,
-                      kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=0))
+                      kernel_size=3, stride=2, padding=1))
         self.layer_norm = layer_norm
         self.emb_norm = emb_norm
         if self.layer_norm:
