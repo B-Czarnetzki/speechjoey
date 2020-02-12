@@ -31,7 +31,7 @@ from joeynmt.helpers import log_data_info, load_config, log_cfg, \
     make_logger, set_seed, symlink_update, ConfigurationError
 from joeynmt.prediction import validate_on_data
 from joeynmt.loss import XentLoss
-from joeynmt.data import load_data, make_data_iter
+from joeynmt.data import load_data, load_audio_data, make_data_iter
 from joeynmt.builders import build_optimizer, build_scheduler, \
     build_gradient_clipper
 from joeynmt.prediction import test
@@ -473,8 +473,7 @@ class TrainManager:
         batch_loss = self.model.get_loss_for_batch(
             batch=batch, loss_function=self.loss)
 
-        #print(float(batch_loss))
-
+        # print(float(batch_loss))
 
         # normalize batch loss
         if self.normalization == "batch":
