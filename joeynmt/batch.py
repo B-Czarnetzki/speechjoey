@@ -44,8 +44,8 @@ class Batch:
             max_tensor = max(self.mfcc, key=lambda x: x.shape[0])
             max_dim = max_tensor.shape[0]
             padded_mfcc = []
-            for x in self.mfcc: 
-                m = nn.ZeroPad2d((0, 0, 0, max_dim-x.shape[0]))
+            for x in self.mfcc:
+                m = nn.ZeroPad2d((0, 0, 0, max_dim - x.shape[0]))
                 padded_mfcc.append(m(x))
             self.mfcc = torch.stack(padded_mfcc)
 
@@ -91,7 +91,7 @@ class Batch:
         :return:
         """
         _, perm_index = self.src_lengths.sort(0, descending=True)
-        rev_index = [0]*perm_index.size(0)
+        rev_index = [0] * perm_index.size(0)
         for new_pos, old_pos in enumerate(perm_index.cpu().numpy()):
             rev_index[old_pos] = new_pos
 
@@ -113,7 +113,7 @@ class Batch:
             self.conv = sorted_conv
             self.conv_lengths = sorted_conv_lengths
             self.conv_mask = sorted_conv_mask
-            
+
         self.src = sorted_src
         self.src_lengths = sorted_src_lengths
         self.src_mask = sorted_src_mask

@@ -406,6 +406,9 @@ class TrainManager:
         batch_loss = self.model.get_loss_for_batch(
             batch=batch, loss_function=self.loss)
 
+        #print(float(batch_loss))
+
+
         # normalize batch loss
         if self.normalization == "batch":
             normalizer = batch.nseqs
