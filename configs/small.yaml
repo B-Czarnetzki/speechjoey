@@ -3,30 +3,25 @@ name: "my_experiment"
 speech: False # default: True
 
 data: # specify your data here
-    src: "de"  # src language: expected suffix of train files, e.g. "train.de"
-    trg: "en"  # trg language
-    audio: "src" # the language for the speech processing output, default: src
-    audio_features_level: "mfcc" # default: "mfcc", other option: "mel_fb"
-    use_htk: False # use HTK formula or Slaney for for mel filters
-    #scale: "None" # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
-    train: "test/data/toy/train"  # training data
-    dev: "test/data/toy/dev"  # development data for validation
-    test: "test/data/toy/test"  # test data for testing final model; optional
-    level: "word" # segmentation level: either "word", "bpe" or "char"
-    lowercase: True # lowercase the data, also for validation
-    max_sent_length: 30 # filter out longer sentences from training (src+trg)
-    max_audio_length: 1000 # filter out longer audio files from training
-    src_voc_min_freq: 1 # src minimum frequency for a token to become part of the vocabulary
-    src_voc_limit: 101  # src vocabulary only includes this many most frequent tokens, default: unlimited
-    trg_voc_min_freq: 1 # trg minimum frequency for a token to become part of the vocabulary
-    trg_voc_limit: 102  # trg vocabulary only includes this many most frequent tokens, default: unlimited
+    src: "de"                       # src language: expected suffix of train files, e.g. "train.de"
+    trg: "en"                       # trg language
+    train: "test/data/toy/train"    # training data
+    dev: "test/data/toy/dev"        # development data for validation
+    test: "test/data/toy/test"      # test data for testing final model; optional
+    random_train_subset: -1         # select this many training examples randomly for training and discard the rest, -1: all
+    level: "word"                   # segmentation level: either "word", "bpe" or "char"
+    lowercase: True                 # lowercase the data, also for validation
+    max_sent_length: 30             # filter out longer sentences from training (src+trg)
+    src_voc_min_freq: 1             # src minimum frequency for a token to become part of the vocabulary
+    src_voc_limit: 101              # src vocabulary only includes this many most frequent tokens, default: unlimited
+    trg_voc_min_freq: 1             # trg minimum frequency for a token to become part of the vocabulary
+    trg_voc_limit: 102              # trg vocabulary only includes this many most frequent tokens, default: unlimited
     #src_vocab: "my_model/src_vocab.txt"  # if specified, load a vocabulary from this file
     #trg_vocab: "my_model/trg_vocab.txt"  # one token per line, line number is index
-    input_length_ratio: 100 # a possible training set's filter due to the length difference
 
-testing:  # specify which inference algorithm to use for testing (for validation it's always greedy decoding)
-    beam_size: 5  # size of the beam for beam search
-    alpha: 1.0  # length penalty for beam search
+testing:                            # specify which inference algorithm to use for testing (for validation it's always greedy decoding)
+    beam_size: 5                    # size of the beam for beam search
+    alpha: 1.0                      # length penalty for beam search
 
 training: # specify training details here
     #load_model: "my_model/50.ckpt" # if given, load a pre-trained model from this checkpoint
@@ -45,7 +40,7 @@ training: # specify training details here
     epochs: 5  # train for this many epochs
     validation_freq: 10  # validate after this many updates (number of mini-batches), default: 1000
     logging_freq: 10  # log the training progress after this many updates, default: 100
-    eval_metric: "bleu" # validation metric, default: "bleu", other options: "wer", "cer", "chrf", "token_accuracy", "sequence_accuracy"
+    eval_metric: "bleu" # validation metric, default: "bleu", other options: "chrf", "token_accuracy", "sequence_accuracy"
     early_stopping_metric: "loss"  # when a new high score on this metric is achieved, a checkpoint is written, when "eval_metric" (default) is maximized, when "loss" or "ppl" is minimized
     model_dir: "my_model" # directory where models and validation results are stored, required
     overwrite: True # overwrite existing model directory, default: False. Do not set to True unless for debugging!
@@ -55,12 +50,23 @@ training: # specify training details here
     print_valid_sents: [0, 1, 2]  # print this many validation sentences during each validation run, default: [0, 1, 2]
     keep_last_ckpts: 3  # keep this many of the latest checkpoints, if -1: all of them, default: 5
 
-model:  # specify your model architecture here
-    tied_embeddings: False  # tie src and trg embeddings, only applicable if vocabularies are the same, default: False
+model:                              # specify your model architecture here
+    initializer: "xavier"           # initializer for all trainable weights (xavier, zeros, normal, uniform)
+    init_weight: 0.01               # weight to initialize; for uniform, will use [-weight, weight]
+    init_gain: 1.0                  # gain for Xavier initializer (default: 1.0)
+    bias_initializer: "zeros"       # initializer for bias terms (xavier, zeros, normal, uniform)
+    embed_initializer: "normal"     # initializer for embeddings (xavier, zeros, normal, uniform)
+    embed_init_weight: 0.1          # weight to initialize; for uniform, will use [-weight, weight]
+    embed_init_gain: 1.0            # gain for Xavier initializer for embeddings (default: 1.0)
+    init_rnn_orthogonal: False      # use orthogonal initialization for recurrent weights (default: False)
+    lstm_forget_gate: 1.            # initialize LSTM forget gate with this value (default: 1.)
+    tied_embeddings: False          # tie src and trg embeddings, only applicable if vocabularies are the same, default: False
+    tied_softmax: False             # tie trg embeddings and softmax (for Transformer; can be used together with tied_embeddings), default: False
     encoder:
-        rnn_type: "gru" # type of recurrent unit to use, either "gru" or "lstm", default: "lstm"
+        type: "recurrent"           # encoder type: "recurrent" for LSTM or GRU, or "transformer" for a Transformer
+        rnn_type: "gru"             # type of recurrent unit to use, either "gru" or "lstm", default: "lstm"
         embeddings:
-            embedding_dim: 16 # size of embeddings, should not be higher than 80
+            embedding_dim: 16 # size of embeddings
             scale: False  # scale the embeddings by sqrt of their size, default: False
             freeze: False  # if True, embeddings are not updated during training
         hidden_size: 30 # size of RNN
@@ -68,21 +74,18 @@ model:  # specify your model architecture here
         dropout: 0.2  # apply dropout to the inputs to the RNN, default: 0.0
         num_layers: 3 # stack this many layers of equal size, default: 1
         freeze: False  # if True, encoder parameters are not updated during training (does not include embedding parameters)
-        activation: "relu" # activation type for 2 layers following the src embeddings (only for speech), default: "relu", other options: "tanh"
-        last_activation: "None" # non-linear activation after RNNs in speech encoder, default: "None", other options: "tanh", "relu"
-        layer_norm: False # layer normalization layers for 2 CNNs and RNN layer, default: False
-        emb_norm: False # layer normalization layers for embeddings, default: False
     decoder:
+        type: "recurrent"           # decoder type: "recurrent" for LSTM or GRU, or "transformer" for a Transformer
         rnn_type: "gru"
         embeddings:
             embedding_dim: 16
             scale: False
-            freeze: False  # if True, embeddings are not updated during training
+            freeze: False           # if True, embeddings are not updated during training
         hidden_size: 30
         dropout: 0.2
-        hidden_dropout: 0.2 # apply dropout to the attention vector, default: 0.0
+        hidden_dropout: 0.2         # apply dropout to the attention vector, default: 0.0
         num_layers: 2
-        input_feeding: True # combine hidden state and attention vector before feeding to rnn, default: True
-        init_hidden: "last" # initialized the decoder hidden state: use linear projection of last encoder state ("bridge") or simply the last state ("last") or zeros ("zero"), default: "bridge"
-        attention: "bahdanau" # attention mechanism, choices: "bahdanau" (MLP attention), "luong" (bilinear attention), default: "bahdanau"
-        freeze: False  # if True, decoder parameters are not updated during training (does not include embedding parameters, but attention)
+        input_feeding: True         # combine hidden state and attention vector before feeding to rnn, default: True
+        init_hidden: "last"         # initialized the decoder hidden state: use linear projection of last encoder state ("bridge") or simply the last state ("last") or zeros ("zero"), default: "bridge"
+        attention: "bahdanau"       # attention mechanism, choices: "bahdanau" (MLP attention), "luong" (bilinear attention), default: "bahdanau"
+        freeze: False               # if True, decoder parameters are not updated during training (does not include embedding parameters, but attention)
