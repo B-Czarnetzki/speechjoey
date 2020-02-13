@@ -293,13 +293,13 @@ class SpeechRecurrentEncoder(Encoder):
         # apply dropout to the rnn input
         conv_do = self.rnn_input_dropout(conv_out2)
 
-        print(conv_do.size())
-        print("convolution length", conv_length)
+        #print(conv_do.size())
+        #print("convolution length", conv_length)
         packed = pack_padded_sequence(conv_do, conv_length, batch_first=True)
         #print("packed: ", packed)
         output, hidden = self.rnn(packed)
 
-        print("output", output[0].shape)
+        #print("output", output[0].shape)
 
         #pylint: disable=unused-variable
         if isinstance(hidden, tuple):
@@ -338,7 +338,7 @@ class SpeechRecurrentEncoder(Encoder):
         # final: batch x directions*hidden
         return output, hidden_concat
 
-    @property
+    #@property
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.rnn)
 

@@ -520,7 +520,7 @@ class TrainManager:
         # increment token counter
         self.total_tokens += batch.ntokens
 
-        return norm_batch_multiply
+        return norm_batch_loss
 
     def _add_report(self, valid_score: float, valid_ppl: float,
                     valid_loss: float, eval_metric: str,

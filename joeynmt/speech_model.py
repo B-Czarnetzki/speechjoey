@@ -17,6 +17,7 @@ from joeynmt.constants import PAD_TOKEN, EOS_TOKEN, BOS_TOKEN
 from joeynmt.search import beam_search, greedy
 from joeynmt.vocabulary import Vocabulary
 from joeynmt.batch import Batch
+from joeynmt.helpers import ConfigurationError
 
 
 class SpeechModel(nn.Module):
@@ -83,7 +84,7 @@ class SpeechModel(nn.Module):
                            unrol_steps=unrol_steps)
 
     def encode(self, src: Tensor, src_length: Tensor, src_mask: Tensor,
-            conv_length: Tensor, mfcc: Tensor) -> (Tensor, Tensor):
+               conv_length: Tensor, mfcc: Tensor) -> (Tensor, Tensor):
         """
         Encodes the source sentence.
         TODO adapt to transformer
@@ -191,18 +192,16 @@ class SpeechModel(nn.Module):
         :return: string representation
         """
         return "%s(\n" \
-               "\tencoder=%r,\n" \
-               "\tdecoder=%r,\n" \
-               "\tsrc_embed=%r,\n" \
-               "\ttrg_embed=%r)" % (
-                   self.__class__.__name__, str(self.encoder),
-                   str(self.decoder),
-                   self.src_embed, self.trg_embed)
+               "\tencoder=%s,\n" \
+               "\tdecoder=%s,\n" \
+               "\tsrc_embed=%s,\n" \
+               "\ttrg_embed=%s)" % (self.__class__.__name__, self.encoder,
+                                    self.decoder, self.src_embed, self.trg_embed)
 
 
 def build_speech_model(cfg: dict = None,
-                src_vocab: Vocabulary = None,
-                trg_vocab: Vocabulary = None) -> SpeechModel:
+                       src_vocab: Vocabulary = None,
+                       trg_vocab: Vocabulary = None) -> SpeechModel:
     """
     Build and initialize the model according to the configuration.
 
@@ -219,7 +218,7 @@ def build_speech_model(cfg: dict = None,
         padding_idx=src_padding_idx)
 
     if cfg.get("tied_embeddings", False) \
-        and src_vocab.itos == trg_vocab.itos:
+            and src_vocab.itos == trg_vocab.itos:
         # share embeddings for src and trg
         trg_embed = src_embed
     else:
@@ -228,14 +227,14 @@ def build_speech_model(cfg: dict = None,
             padding_idx=trg_padding_idx)
 
     encoder = SpeechRecurrentEncoder(**cfg["encoder"],
-                               emb_size=src_embed.embedding_dim)
+                                     emb_size=src_embed.embedding_dim)
     decoder = RecurrentDecoder(**cfg["decoder"], encoder=encoder,
                                vocab_size=len(trg_vocab),
                                emb_size=trg_embed.embedding_dim)
 
     model = SpeechModel(encoder=encoder, decoder=decoder,
-                  src_embed=src_embed, trg_embed=trg_embed,
-                  src_vocab=src_vocab, trg_vocab=trg_vocab)
+                        src_embed=src_embed, trg_embed=trg_embed,
+                        src_vocab=src_vocab, trg_vocab=trg_vocab)
 
     # custom initialization of model parameters
     initialize_model(model, cfg, src_padding_idx, trg_padding_idx)
