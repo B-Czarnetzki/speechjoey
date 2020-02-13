@@ -6,7 +6,7 @@ data: # specify your data here
     src: "de"  # src language: expected suffix of train files, e.g. "train.de"
     trg: "en"  # trg language
     audio: "src" # the language for the speech processing output, default: src
-    audio_features_level: "mfcc" # default: "mfcc", other option: "mel_fb"
+    audio_features_level: "mfcc_berard_et_al" # default: "mfcc", other option: "mel_fb"
     use_htk: True # use HTK formula or Slaney for for mel filters
     #scale: "None" # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "develop/raw/head"  # training data
@@ -34,11 +34,11 @@ training: # specify training details here
     optimizer: "adam" # choices: "sgd", "adam", "adadelta", "adagrad", "rmsprop", default is SGD
     learning_rate: 0.001  # initial learning rate, default: 3.0e-4
     learning_rate_min: 0.00001  # stop learning when learning rate is reduced below this threshold, default: 1.0e-8
-    clip_grad_val: 1.0  # clip the gradients to this value when they exceed it, optional
+    #clip_grad_val: 1.0  # clip the gradients to this value when they exceed it, optional
     #clip_grad_norm: 1.0  # norm clipping instead of value clipping
     weight_decay: 0.1 # l2 regularization, default: 0
-    batch_size: 5  # mini-batch size, required
-    batch_multiplier: 1 # increase the effective batch size with values >1 to batch_multiplier*batch_size without increasing memory consumption by making updates only every batch_multiplier batches
+    batch_size: 1  # mini-batch size, required
+    batch_multiplier: 5 # increase the effective batch size with values >1 to batch_multiplier*batch_size without increasing memory consumption by making updates only every batch_multiplier batches
     scheduling: "plateau" # learning rate scheduling, optional, if not specified stays constant, options: "plateau", "exponential", "decaying"
     patience: 5 # specific to plateau scheduler: wait for this many validations without improvement before decreasing the learning rate
     decrease_factor: 0.5  # specific to plateau & exponential scheduler: decrease the learning rate by this factor
@@ -49,7 +49,7 @@ training: # specify training details here
     early_stopping_metric: "loss" # when a new high score on this metric is achieved, a checkpoint is written, when "eval_metric" (default) is maximized, when "loss" or "ppl" is minimized
     model_dir: "models/mini/testme_model" # directory where models and validation results are stored, required
     overwrite: True # overwrite existing model directory, default: False. Do not set to True unless for debugging!
-    #shuffle: False # shuffle the training data, default: True
+    shuffle: False # shuffle the training data, default: True
     use_cuda: False # use CUDA for acceleration on GPU, required. Set to False when working on CPU.
     max_output_length: 150  # maximum output length for decoding, default: None. If set to None, allow sentences of max 1.5*src length
     print_valid_sents: [0, 3, 5]  # print this many validation sentences during each validation run, default: 3
