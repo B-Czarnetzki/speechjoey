@@ -57,7 +57,7 @@ class SpeechModel(nn.Module):
     #pylint: disable=arguments-differ
     def forward(self, src: Tensor, trg_input: Tensor, src_mask: Tensor,
                 src_lengths: Tensor, conv_mask: Tensor, conv_lengths: Tensor,
-                src_mfcc: Tensor) -> (Tensor, Tensor, Tensor, Tensor):
+                src_mfcc: Tensor, trg_mask: Tensor = None) -> (Tensor, Tensor, Tensor, Tensor):
         """
         Take in and process masked src and target sequences.
         Use the encoder hidden state to initialize the decoder
@@ -77,11 +77,12 @@ class SpeechModel(nn.Module):
                                                      src_mask=src_mask,
                                                      conv_length=conv_lengths,
                                                      mfcc=src_mfcc)
-        unrol_steps = trg_input.size(1)
+        unroll_steps = trg_input.size(1)
         return self.decode(encoder_output=encoder_output,
                            encoder_hidden=encoder_hidden,
                            conv_mask=conv_mask, trg_input=trg_input,
-                           unrol_steps=unrol_steps)
+                           unroll_steps=unroll_steps,
+                           trg_mask=trg_mask)
 
     def encode(self, src: Tensor, src_length: Tensor, src_mask: Tensor,
                conv_length: Tensor, mfcc: Tensor) -> (Tensor, Tensor):
@@ -100,7 +101,8 @@ class SpeechModel(nn.Module):
 
     def decode(self, encoder_output: Tensor, encoder_hidden: Tensor,
                conv_mask: Tensor, trg_input: Tensor,
-               unrol_steps: int, decoder_hidden: Tensor = None) \
+               unroll_steps: int, decoder_hidden: Tensor = None,
+               trg_mask: Tensor = None) \
             -> (Tensor, Tensor, Tensor, Tensor):
         """
         Decode, given an encoded source sentence.
@@ -109,7 +111,7 @@ class SpeechModel(nn.Module):
         :param encoder_hidden: last encoder state for decoder initialization
         :param conv_mask: source mask after convolutions, 1 at valid tokens
         :param trg_input: target inputs
-        :param unrol_steps: number of steps to unrol the decoder for
+        :param unroll_steps: number of steps to unrol the decoder for
         :param decoder_hidden: decoder hidden state (optional)
         :return: decoder outputs (outputs, hidden, att_probs, att_vectors)
         """
@@ -117,8 +119,9 @@ class SpeechModel(nn.Module):
                             encoder_output=encoder_output,
                             encoder_hidden=encoder_hidden,
                             src_mask=conv_mask,
-                            unrol_steps=unrol_steps,
-                            hidden=decoder_hidden)
+                            unroll_steps=unroll_steps,
+                            hidden=decoder_hidden,
+                            trg_mask=trg_mask)
 
     def get_loss_for_batch(self, batch: Batch, loss_function: nn.Module) -> Tensor:
         """
@@ -132,16 +135,15 @@ class SpeechModel(nn.Module):
         # pylint: disable=unused-variable
         out, hidden, att_probs, _ = self.forward(
             src=batch.src, trg_input=batch.trg_input,
-            src_mask=batch.src_mask, src_lengths=batch.src_lengths, conv_mask=batch.conv_mask,
+            src_mask=batch.src_mask, src_lengths=batch.src_lengths,
+            trg_mask=batch.trg_mask, conv_mask=batch.conv_mask,
             conv_lengths=batch.conv_lengths, src_mfcc=batch.mfcc)
 
         # compute log probs
         log_probs = F.log_softmax(out, dim=-1)
 
         # compute batch loss
-        batch_loss = loss_function(
-            input=log_probs.contiguous().view(-1, log_probs.size(-1)),
-            target=batch.trg.contiguous().view(-1))
+        batch_loss = loss_function(log_probs, batch.trg)
         # return batch loss = sum over all elements in batch that are not pad
         return batch_loss
 
@@ -226,11 +228,20 @@ def build_speech_model(cfg: dict = None,
             **cfg["decoder"]["embeddings"], vocab_size=len(trg_vocab),
             padding_idx=trg_padding_idx)
 
+    enc_dropout = cfg["encoder"].get("dropout", 0.)
+    enc_emb_dropout = cfg["encoder"]["embeddings"].get("dropout", enc_dropout)
+
     encoder = SpeechRecurrentEncoder(**cfg["encoder"],
-                                     emb_size=src_embed.embedding_dim)
+                                     emb_size=src_embed.embedding_dim,
+                                     emb_dropout=enc_emb_dropout)
+
+    dec_dropout = cfg["decoder"].get("dropout", 0.)
+    dec_emb_dropout = cfg["decoder"]["embeddings"].get("dropout", dec_dropout)
+
     decoder = RecurrentDecoder(**cfg["decoder"], encoder=encoder,
                                vocab_size=len(trg_vocab),
-                               emb_size=trg_embed.embedding_dim)
+                               emb_size=trg_embed.embedding_dim,
+                               emb_dropout=dec_emb_dropout)
 
     model = SpeechModel(encoder=encoder, decoder=decoder,
                         src_embed=src_embed, trg_embed=trg_embed,

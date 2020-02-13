@@ -160,6 +160,8 @@ class SpeechRecurrentEncoder(Encoder):
                  emb_size: int = 1,
                  num_layers: int = 1,
                  dropout: float = 0.,
+                 emb_dropout: float = 0.,
+                 rnn_input_dropout=0.,
                  bidirectional: bool = True,
                  freeze: bool = False,
                  activation: str = "relu",
@@ -183,7 +185,9 @@ class SpeechRecurrentEncoder(Encoder):
 
         super(SpeechRecurrentEncoder, self).__init__()
 
-        self.rnn_input_dropout = torch.nn.Dropout(p=dropout, inplace=False)
+        self.emb_dropout = torch.nn.Dropout(p=emb_dropout, inplace=False)
+        self.rnn_input_dropout = torch.nn.Dropout(
+            p=rnn_input_dropout, inplace=False)
         self.type = rnn_type
         self.emb_size = emb_size
         self.lila1 = nn.Linear(emb_size, linear_hidden_size_1)
@@ -259,6 +263,9 @@ class SpeechRecurrentEncoder(Encoder):
         if self.emb_norm:
             embed_src = self.norm_emb(embed_src)
 
+        # apply dropout to the rnn input
+        embed_src = self.emb_dropout(embed_src)
+
         # 2 layers with nonlinear activation
         if self.activation == "tanh":
             lila_out1 = torch.tanh(self.lila1(embed_src))
@@ -293,7 +300,7 @@ class SpeechRecurrentEncoder(Encoder):
         # apply dropout to the rnn input
         conv_do = self.rnn_input_dropout(conv_out2)
 
-        #print(conv_do.size())
+        # print(conv_do.size())
         #print("convolution length", conv_length)
         packed = pack_padded_sequence(conv_do, conv_length, batch_first=True)
         #print("packed: ", packed)
