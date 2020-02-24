@@ -164,8 +164,7 @@ class SpeechRecurrentEncoder(Encoder):
                  rnn_input_dropout=0.,
                  bidirectional: bool = True,
                  freeze: bool = False,
-                 activation: str = "relu",
-                 last_activation: str = "None",
+                 activation: str = "tanh",
                  layer_norm: bool = False,
                  emb_norm: bool = False,
                  same_weights: bool = False,
@@ -193,7 +192,6 @@ class SpeechRecurrentEncoder(Encoder):
         self.lila1 = nn.Linear(emb_size, linear_hidden_size_1)
         self.lila2 = nn.Linear(linear_hidden_size_1, linear_hidden_size_2)
         self.activation = activation
-        self.last_activation = last_activation
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, 16,
                       kernel_size=3, stride=2, padding=1))
@@ -335,12 +333,6 @@ class SpeechRecurrentEncoder(Encoder):
         # layer normalization
         if self.layer_norm:
             output = self.norm_out(output)
-
-        # a non-linear activation for the output layer
-        if self.last_activation == "relu":
-            output = torch.relu(output)
-        elif self.last_activation == "tanh":
-            output = torch.tanh(output)
 
         # final: batch x directions*hidden
         return output, hidden_concat

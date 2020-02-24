@@ -12,7 +12,7 @@ from torch import Tensor
 from joeynmt.initialization import initialize_model
 from joeynmt.embeddings import Embeddings
 from joeynmt.encoders import Encoder, SpeechRecurrentEncoder
-from joeynmt.decoders import Decoder, RecurrentDecoder
+from joeynmt.decoders import Decoder, RecurrentDecoder, ConditionalRecurrentDecoder
 from joeynmt.constants import PAD_TOKEN, EOS_TOKEN, BOS_TOKEN
 from joeynmt.search import beam_search, greedy
 from joeynmt.vocabulary import Vocabulary
@@ -238,10 +238,10 @@ def build_speech_model(cfg: dict = None,
     dec_dropout = cfg["decoder"].get("dropout", 0.)
     dec_emb_dropout = cfg["decoder"]["embeddings"].get("dropout", dec_dropout)
 
-    decoder = RecurrentDecoder(**cfg["decoder"], encoder=encoder,
-                               vocab_size=len(trg_vocab),
-                               emb_size=trg_embed.embedding_dim,
-                               emb_dropout=dec_emb_dropout)
+    decoder = ConditionalRecurrentDecoder(**cfg["decoder"], encoder=encoder,
+                                          vocab_size=len(trg_vocab),
+                                          emb_size=trg_embed.embedding_dim,
+                                          emb_dropout=dec_emb_dropout)
 
     model = SpeechModel(encoder=encoder, decoder=decoder,
                         src_embed=src_embed, trg_embed=trg_embed,
