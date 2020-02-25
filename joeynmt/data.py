@@ -408,11 +408,15 @@ class AudioDataset(TranslationDataset):
                             featuresT = sklearn.preprocessing.scale(featuresT)
                         featureS = torch.Tensor(featuresT)
                         if char_level:
+                            print("FeatureT shape: ", featuresT.shape[0])
                             # generate a line with <unk> of given size
                             audio_dummy = "a" * (featuresT.shape[0])
+
                             conv_dummy = "a" * \
-                                int(round(
-                                    round(featuresT.shape[0] / 2) / 2))
+                                int(math.ceil(
+                                    math.ceil(featuresT.shape[0] / 2) / 2) - 1)
+                            print("Conv dummy length: ", int(math.ceil(
+                                math.ceil(featuresT.shape[0] / 2) / 2) - 1))
                         else:
                             # generate a line with <unk> of given size
                             audio_dummy = "a " * (featuresT.shape[0])
@@ -493,7 +497,7 @@ class MonoAudioDataset(TranslationDataset):
                         S, phase = librosa.magphase(librosa.stft(
                             y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
                         rms = librosa.feature.rms(S=S)
-
+                        #print("\n" *7, "hallo")
                         features_delta_1 = librosa.feature.delta(
                             features_orig, order=1)
                         features_delta_2 = librosa.feature.delta(
@@ -506,8 +510,10 @@ class MonoAudioDataset(TranslationDataset):
                     # normalize coefficients column-wise for each example
                     featuresNorm = librosa.util.normalize(featuresT) * 0.01
                     featureS = torch.Tensor(featuresNorm)
+                    print(char_level)
                     if char_level:
                         # generate a line with <unk> of given size
+                        #print("Featue T shape: ", featuresT.shape[0])
                         audio_dummy = "a" * (featuresT.shape[0])
                         conv_dummy = "a" * \
                             int(round(round(featuresT.shape[0] / 2) / 2))

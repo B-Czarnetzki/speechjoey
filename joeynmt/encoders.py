@@ -264,7 +264,6 @@ class SpeechRecurrentEncoder(Encoder):
         # apply dropout to the rnn input
         embed_src = self.emb_dropout(embed_src)
 
-        print("\n\n\nNew batch: \n")
         print("Embedding shape: ", embed_src.size())
         # 2 layers with nonlinear activation
         if self.activation == "tanh":
@@ -302,6 +301,7 @@ class SpeechRecurrentEncoder(Encoder):
 
         # print(conv_do.size())
         #print("convolution length", conv_length)
+        print("conv length: ", conv_length)
         packed = pack_padded_sequence(conv_do, conv_length, batch_first=True)
         print("Packed shape: ", packed[0].size())
 
@@ -314,10 +314,9 @@ class SpeechRecurrentEncoder(Encoder):
         if isinstance(hidden, tuple):
             hidden, memory_cell = hidden
 
-        print("conv length: ", conv_length)
-        print("output shape: ", output[0].size())
+        print("rnn output shape: ", output[0].size())
         output, _ = pad_packed_sequence(output, batch_first=True)
-        print("padded output shape: ", output.size())
+        print("rnn padded output shape: ", output.size())
 
         # hidden: dir*layers x batch x hidden
         # output: batch x max_length x directions*hidden
