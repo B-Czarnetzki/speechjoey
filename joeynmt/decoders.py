@@ -835,7 +835,7 @@ class ConditionalRecurrentDecoder(Decoder):
         return (hidden, hidden) if isinstance(self.rnn, nn.LSTM) else hidden
 
     def __repr__(self):
-        return "RecurrentDecoder(rnn=%r, attention=%r)" % (
+        return "ConditionalRecurrentDecoder(rnn=%r, attention=%r)" % (
             self.rnn, self.attention)
 
 
