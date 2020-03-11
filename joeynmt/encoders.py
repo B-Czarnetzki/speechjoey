@@ -184,6 +184,11 @@ class SpeechRecurrentEncoder(Encoder):
 
         super(SpeechRecurrentEncoder, self).__init__()
 
+        #print("\n" * 10)
+        #print("Dropout: ", dropout)
+        #print("Emb_dropout: ", emb_dropout)
+        #print("rnn_input_dropout: ", rnn_input_dropout)
+
         self.emb_dropout = torch.nn.Dropout(p=emb_dropout, inplace=False)
         self.rnn_input_dropout = torch.nn.Dropout(
             p=rnn_input_dropout, inplace=False)
@@ -264,7 +269,7 @@ class SpeechRecurrentEncoder(Encoder):
         # apply dropout to the rnn input
         embed_src = self.emb_dropout(embed_src)
 
-        print("Embedding shape: ", embed_src.size())
+        #print("Embedding shape: ", embed_src.size())
         # 2 layers with nonlinear activation
         if self.activation == "tanh":
             lila_out1 = torch.tanh(self.lila1(embed_src))
@@ -275,19 +280,19 @@ class SpeechRecurrentEncoder(Encoder):
 
         lila_out2 = lila_out2.unsqueeze(1)
         #print("\nlila1 output shape: ", lila_out1.size())
-        print("Convolution input shape: ", lila_out2.size())
+        #print("Convolution input shape: ", lila_out2.size())
         # 2 convolutional layers
         conv_out1 = self.conv1(lila_out2)
-        print("Convolution 1 output shape: ", conv_out1.size())
+        #print("Convolution 1 output shape: ", conv_out1.size())
 
         # layer normalization
         if self.layer_norm:
             conv_out1 = self.norm1(conv_out1)
 
         conv_out2 = self.conv2(conv_out1)
-        print("Convolution 2 output shape: ", conv_out2.size())
+        #print("Convolution 2 output shape: ", conv_out2.size())
         conv_out2 = conv_out2.transpose(1, 3).transpose(1, 2)
-        print("Convolution 2 output tranposed: ", conv_out2.size())
+        #print("Convolution 2 output tranposed: ", conv_out2.size())
 
         conv_out2 = conv_out2.flatten(start_dim=2)
 
@@ -295,15 +300,15 @@ class SpeechRecurrentEncoder(Encoder):
         if self.layer_norm:
             conv_out2 = self.norm2(conv_out2)
 
-        print("convolution 2 output flattend: ", conv_out2.size())
+        #print("convolution 2 output flattend: ", conv_out2.size())
         # apply dropout to the rnn input
         conv_do = self.rnn_input_dropout(conv_out2)
 
         # print(conv_do.size())
         #print("convolution length", conv_length)
-        print("conv length: ", conv_length)
+        #print("conv length: ", conv_length)
         packed = pack_padded_sequence(conv_do, conv_length, batch_first=True)
-        print("Packed shape: ", packed[0].size())
+        #print("Packed shape: ", packed[0].size())
 
         #print("packed: ", packed)
         output, hidden = self.rnn(packed)
@@ -314,9 +319,9 @@ class SpeechRecurrentEncoder(Encoder):
         if isinstance(hidden, tuple):
             hidden, memory_cell = hidden
 
-        print("rnn output shape: ", output[0].size())
+        #print("rnn output shape: ", output[0].size())
         output, _ = pad_packed_sequence(output, batch_first=True)
-        print("rnn padded output shape: ", output.size())
+        #print("rnn padded output shape: ", output.size())
 
         # hidden: dir*layers x batch x hidden
         # output: batch x max_length x directions*hidden

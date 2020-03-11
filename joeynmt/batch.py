@@ -37,7 +37,11 @@ class Batch:
 
         if hasattr(torch_batch, "conv"):
             self.conv, self.conv_lengths = torch_batch.conv
+            #print("\n\n\n New batch: \n")
+            #print("self conv: ", self.conv)
+            #print("self conv length: ", self.conv_lengths)
             self.conv_mask = (self.conv != pad_index).unsqueeze(-2)
+            #print("conv mask: ", self.conv_mask)
 
         if hasattr(torch_batch, "mfcc"):
             self.mfcc = torch_batch.mfcc
