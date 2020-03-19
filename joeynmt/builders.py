@@ -30,12 +30,14 @@ def build_gradient_clipper(config: dict) -> Optional[Callable]:
     clip_grad_fun = None
     if "clip_grad_val" in config.keys():
         clip_value = config["clip_grad_val"]
-        clip_grad_fun = lambda params: \
+
+        def clip_grad_fun(params): return \
             nn.utils.clip_grad_value_(parameters=params,
                                       clip_value=clip_value)
     elif "clip_grad_norm" in config.keys():
         max_norm = config["clip_grad_norm"]
-        clip_grad_fun = lambda params: \
+
+        def clip_grad_fun(params): return \
             nn.utils.clip_grad_norm_(parameters=params, max_norm=max_norm)
 
     if "clip_grad_val" in config.keys() and "clip_grad_norm" in config.keys():
@@ -144,7 +146,8 @@ def build_scheduler(config: dict, optimizer: Optimizer, scheduler_mode: str,
         elif config["scheduling"].lower() == "decaying":
             scheduler = StepLR(
                 optimizer=optimizer,
-                step_size=config.get("decaying_step_size", 1))
+                step_size=config.get("decaying_step_size", 1),
+                gamma=config.get("gamma", 0.1))
             # scheduler step is executed after every epoch
             scheduler_step_at = "epoch"
         elif config["scheduling"].lower() == "exponential":
