@@ -448,6 +448,7 @@ class ConditionalRecurrentDecoder(Decoder):
                  dropout: float = 0.,
                  emb_dropout: float = 0.,
                  hidden_dropout: float = 0.,
+                 init_state_dropout: float =0.,
                  init_hidden: str = "bridge",
                  input_feeding: bool = True,
                  freeze: bool = False,
@@ -480,6 +481,8 @@ class ConditionalRecurrentDecoder(Decoder):
         self.emb_dropout = torch.nn.Dropout(p=emb_dropout, inplace=False)
         self.type = rnn_type
         self.hidden_dropout = torch.nn.Dropout(p=hidden_dropout, inplace=False)
+        self.init_state_dropout = torch.nn.Dropout(
+            p=init_state_dropout, inplace=False)
         self.hidden_size = hidden_size
         self.emb_size = emb_size
 
@@ -749,6 +752,7 @@ class ConditionalRecurrentDecoder(Decoder):
         # initialize decoder hidden state from final encoder hidden state
         if hidden is None:
             hidden = self._init_hidden(encoder_hidden)
+            hidden = self.init_state_dropout(hidden)
 
         # pre-compute projected encoder outputs
         # (the "keys" for the attention mechanism)

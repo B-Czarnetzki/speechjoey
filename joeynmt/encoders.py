@@ -162,6 +162,7 @@ class SpeechRecurrentEncoder(Encoder):
                  dropout: float = 0.,
                  emb_dropout: float = 0.,
                  rnn_input_dropout=0.,
+                 input_layer_dropout=0.,
                  bidirectional: bool = True,
                  freeze: bool = False,
                  activation: str = "tanh",
@@ -192,6 +193,8 @@ class SpeechRecurrentEncoder(Encoder):
         self.emb_dropout = torch.nn.Dropout(p=emb_dropout, inplace=False)
         self.rnn_input_dropout = torch.nn.Dropout(
             p=rnn_input_dropout, inplace=False)
+        self.input_layer_dropout = torch.nn.Dropout(
+            p=input_layer_dropout, inplace=False)
         self.type = rnn_type
         self.emb_size = emb_size
         self.lila1 = nn.Linear(emb_size, linear_hidden_size_1)
@@ -273,7 +276,9 @@ class SpeechRecurrentEncoder(Encoder):
         # 2 layers with nonlinear activation
         if self.activation == "tanh":
             lila_out1 = torch.tanh(self.lila1(embed_src))
+            lila_out1 = self.input_layer_dropout(lila_out1)
             lila_out2 = torch.tanh(self.lila2(lila_out1))
+            lila_out2 = self.input_layer_dropout(lila_out2)
         else:
             lila_out1 = torch.relu(self.lila1(embed_src))
             lila_out2 = torch.relu(self.lila2(lila_out1))
