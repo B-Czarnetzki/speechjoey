@@ -377,19 +377,28 @@ class AudioDataset(TranslationDataset):
                             features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
                                 sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
                         elif audio_level == "mfcc_berard_et_al":
-                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=math.floor(num / 3), n_fft=int(sr / 25),
+                            if num != 41:
+                                raise Exception(
+                                    "encoder embedding_dim must be 41 for berar_et_al feature extraction")
+
+                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
                                                                  hop_length=int(sr / 100), n_mels=80, htk=htk)
                             S, phase = librosa.magphase(librosa.stft(
                                 y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
                             rms = librosa.feature.rms(S=S)
 
-                            features_delta_1 = librosa.feature.delta(
-                                features_orig, order=1)
-                            features_delta_2 = librosa.feature.delta(
-                                features_orig, order=2)
+                            # features_delta_1 = librosa.feature.delta(
+                            #    features_orig, order = 1)
+                            # features_delta_2 = librosa.feature.delta(
+                            #    features_orig, order=2)
 
+                            # rms_delta_1 = librosa.feature.delta(rms, order=1)
+                            # rms_delta_2 = librosa.feature.delta(rms, order=2)
+
+                            # features = np.concatenate(
+                            #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
                             features = np.concatenate(
-                                (features_orig, features_delta_1, features_delta_2, rms), axis=0)
+                                (features_orig, rms), axis=0)
 
                         featuresT = features.T
                         if scale == "norm":
@@ -408,14 +417,14 @@ class AudioDataset(TranslationDataset):
                             featuresT = sklearn.preprocessing.scale(featuresT)
                         featureS = torch.Tensor(featuresT)
                         if char_level:
-                            #print("FeatureT shape: ", featuresT.shape[0])
+                            # print("FeatureT shape: ", featuresT.shape[0])
                             # generate a line with <unk> of given size
                             audio_dummy = "a" * (featuresT.shape[0])
 
                             conv_dummy = "a" * \
                                 int(math.ceil(
                                     math.ceil(featuresT.shape[0] / 2) / 2) - 1)
-                            #print("Conv dummy length: ", int(math.ceil(
+                            # print("Conv dummy length: ", int(math.ceil(
                             #    math.ceil(featuresT.shape[0] / 2) / 2) - 1))
                         else:
                             # generate a line with <unk> of given size
@@ -497,7 +506,7 @@ class MonoAudioDataset(TranslationDataset):
                         S, phase = librosa.magphase(librosa.stft(
                             y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
                         rms = librosa.feature.rms(S=S)
-                        #print("\n" *7, "hallo")
+                        # print("\n" *7, "hallo")
                         features_delta_1 = librosa.feature.delta(
                             features_orig, order=1)
                         features_delta_2 = librosa.feature.delta(
@@ -510,10 +519,10 @@ class MonoAudioDataset(TranslationDataset):
                     # normalize coefficients column-wise for each example
                     featuresNorm = librosa.util.normalize(featuresT) * 0.01
                     featureS = torch.Tensor(featuresNorm)
-                    print(char_level)
+
                     if char_level:
                         # generate a line with <unk> of given size
-                        #print("Featue T shape: ", featuresT.shape[0])
+                        # print("Featue T shape: ", featuresT.shape[0])
                         audio_dummy = "a" * (featuresT.shape[0])
                         conv_dummy = "a" * \
                             int(round(round(featuresT.shape[0] / 2) / 2))
