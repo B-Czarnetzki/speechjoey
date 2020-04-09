@@ -379,7 +379,7 @@ class AudioDataset(TranslationDataset):
                         elif audio_level == "mfcc_berard_et_al":
                             if num != 41:
                                 raise Exception(
-                                    "encoder embedding_dim must be 41 for berar_et_al feature extraction")
+                                    "encoder embedding_dim must be 41 for berard_et_al feature extraction")
 
                             features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
                                                                  hop_length=int(sr / 100), n_mels=80, htk=htk)
@@ -399,6 +399,32 @@ class AudioDataset(TranslationDataset):
                             #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
                             features = np.concatenate(
                                 (features_orig, rms), axis=0)
+
+                        elif audio_level == "mfcc_deltas":
+                            if num != 39:
+                                raise Exception(
+                                    "encoder embedding_dim must be 39 for 'mfcc_deltas' feature extraction")
+
+                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=int(
+                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
+
+                            # Only use mFCCs 1-13
+                            features_orig = features_orig[1:]
+
+                            S, phase = librosa.magphase(librosa.stft(
+                                y, n_fft=int(sr / 40), hop_length=int(sr / 100)))
+                            rms = librosa.feature.rms(S=S)
+
+                            features_delta_1 = librosa.feature.delta(
+                                features_orig, order=1)
+                            features_delta_2 = librosa.feature.delta(
+                                features_orig, order=2)
+
+                            rms_delta_1 = librosa.feature.delta(rms, order=1)
+                            rms_delta_2 = librosa.feature.delta(rms, order=2)
+
+                            features = np.concatenate(
+                                (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
 
                         featuresT = features.T
                         if scale == "norm":
