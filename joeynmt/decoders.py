@@ -752,6 +752,7 @@ class ConditionalRecurrentDecoder(Decoder):
         # initialize decoder hidden state from final encoder hidden state
         if hidden is None:
             hidden = self._init_hidden(encoder_hidden)
+            print(type(hidden))
             hidden = self.init_state_dropout(hidden)
 
         # pre-compute projected encoder outputs

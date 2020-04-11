@@ -6,7 +6,7 @@ data: # specify your data here
     src: "de"  # src language: expected suffix of train files, e.g. "train.de"
     trg: "en"  # trg language
     audio: "src" # the language for the speech processing output, default: src
-    audio_features_level: "mfcc_berard_et_al" # default: "mfcc", other option: "mel_fb"
+    audio_features_level: "mfcc_deltas" # default: "mfcc", other option: "mel_fb"
     use_htk: True # use HTK formula or Slaney for for mel filters
     #scale: "None" # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "develop/raw/head"  # training data
@@ -38,14 +38,16 @@ training: # specify training details here
     #clip_grad_norm: 1.0  # norm clipping instead of value clipping
     weight_decay: 0.1 # l2 regularization, default: 0
     batch_size: 1  # mini-batch size, required
-    batch_multiplier: 5 # increase the effective batch size with values >1 to batch_multiplier*batch_size without increasing memory consumption by making updates only every batch_multiplier batches
-    scheduling: "plateau" # learning rate scheduling, optional, if not specified stays constant, options: "plateau", "exponential", "decaying"
-    patience: 5 # specific to plateau scheduler: wait for this many validations without improvement before decreasing the learning rate
-    decrease_factor: 0.5  # specific to plateau & exponential scheduler: decrease the learning rate by this factor
+    batch_multiplier: 2  # increase the effective batch size with values >1 to batch_multiplier*batch_size without increasing memory consumption by making updates only every batch_multiplier batches
+    #scheduling: "decaying" # learning rate scheduling, optional, if not specified stays constant, options: "plateau", "exponential", "decaying"
+    #patience: 5 # specific to plateau scheduler: wait for this many validations without improvement before decreasing the learning rate
+    #decrease_factor: 0.5  # specific to plateau & exponential scheduler: decrease the learning rate by this factor
+    #decaying_step_size: 2
+    #gamma: 0.2
     epochs: 10  # train for this many epochs
     validation_freq: 5  # validate after this many updates (number of mini-batches), default: 1000
     logging_freq: 10  # log the training progress after this many updates, default: 100
-    eval_metric: "bleu" # validation metric, default: "bleu", other options: "wer", "cer", "chrf", "token_accuracy", "sequence_accuracy"
+    eval_metric: "wer" # validation metric, default: "bleu", other options: "wer", "cer", "chrf", "token_accuracy", "sequence_accuracy"
     early_stopping_metric: "loss" # when a new high score on this metric is achieved, a checkpoint is written, when "eval_metric" (default) is maximized, when "loss" or "ppl" is minimized
     model_dir: "models/mini/testme_model" # directory where models and validation results are stored, required
     overwrite: True # overwrite existing model directory, default: False. Do not set to True unless for debugging!
@@ -60,7 +62,7 @@ model:  # specify your model architecture here
     encoder:
         rnn_type: "gru" # type of recurrent unit to use, either "gru" or "lstm", default: "lstm"
         embeddings:
-            embedding_dim: 40 # size of embeddings
+            embedding_dim: 39 # size of embeddings
             scale: False  # scale the embeddings by sqrt of their size, default: False
             freeze: True  # if True, embeddings are not updated during training
         hidden_size: 256 # size of RNN
@@ -68,6 +70,8 @@ model:  # specify your model architecture here
         linear_hidden_size_2: 128 # size of second linear layer
         bidirectional: True # use a bi-directional encoder, default: True
         dropout: 0.2  # apply dropout to the inputs to the RNN, default: 0.0
+        rnn_input_dropout: 0.2
+        input_layer_dropout: 0.2
         num_layers: 3 # stack this many layers of equal size, default: 1
         freeze: False  # if True, encoder parameters are not updated during training (does not include embedding parameters)
         activation: "tanh" # activation type for 2 layers following the src embeddings (only for speech), default: "relu", other options: "tanh"
@@ -84,8 +88,9 @@ model:  # specify your model architecture here
         hidden_size: 50
         dropout: 0.2
         hidden_dropout: 0.2 # apply dropout to the attention vector, default: 0.0
+        init_state_dropout: 0.2
         num_layers: 1
-        input_feeding: True # combine hidden state and attention vector before feeding to rnn, default: True
+        input_feeding: False # combine hidden state and attention vector before feeding to rnn, default: True
         init_hidden: "bridge" # initialized the decoder hidden state: use linear projection of last encoder state ("bridge") or simply the last state ("last") or zeros ("zero"), default: "bridge"
         attention: "bahdanau" # attention mechanism, choices: "bahdanau" (MLP attention), "luong" (bilinear attention), default: "bahdanau"
         freeze: False  # if True, decoder parameters are not updated during training (does not include embedding parameters, but attention)
