@@ -752,8 +752,10 @@ class ConditionalRecurrentDecoder(Decoder):
         # initialize decoder hidden state from final encoder hidden state
         if hidden is None:
             hidden = self._init_hidden(encoder_hidden)
-            print(type(hidden))
-            hidden = self.init_state_dropout(hidden)
+            if self.type == "gru":
+                hidden = self.init_state_dropout(hidden)
+            else:
+                hidden = (self.init_state_dropout(hidden[0]), hidden[1])
 
         # pre-compute projected encoder outputs
         # (the "keys" for the attention mechanism)
