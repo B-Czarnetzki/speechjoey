@@ -12,6 +12,7 @@ import sklearn
 import math
 import numpy as np
 import warnings
+import dill
 
 from typing import Optional
 
@@ -258,6 +259,11 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     htk = data_cfg["use_htk"]
     scale = data_cfg.get("scale", None)
 
+    # For train dataset saving:
+    save_computed_dataset = data_cfg.get("save_computed_dataset", False)
+    load_precomputed_dataset = data_cfg.get("load_precomputed_dataset", False)
+    save_path = data_cfg.get("save_path", None)
+
     # pylint: disable=unnecessary-lambda
     if level == "char":
         def tok_fun(s): return list(s)
@@ -282,7 +288,9 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                               audio_ext=".txt", sfield=src_field, tfield=trg_field,
                               num=number, char_level=char, train=True,
                               check=check_ratio, audio_level=audio_features, htk=htk,
-                              scale=scale, filter_pred=lambda x:
+                              scale=scale, save_computed_dataset=save_computed_dataset,
+                              load_precomputed_dataset=load_precomputed_dataset,
+                              save_path=save_path, filter_pred=lambda x:
                               len(vars(x)['src']) <= max_audio_length
                               and len(vars(x)['trg']) <= max_sent_length)
 
@@ -301,7 +309,10 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     dev_data = AudioDataset(path=dev_path, text_ext="." + audio_lang, audio_ext=".txt",
                             sfield=src_field, tfield=trg_field, num=number,
                             char_level=char, train=False, check=check_ratio,
-                            audio_level=audio_features, htk=htk, scale=scale)
+                            audio_level=audio_features, htk=htk, scale=scale,
+                            save_computed_dataset=save_computed_dataset,
+                            load_precomputed_dataset=load_precomputed_dataset,
+                            save_path=save_path)
     test_data = None
     if test_path is not None:
         # check if target exists
@@ -309,7 +320,10 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
             test_data = AudioDataset(path=test_path, text_ext="." + audio_lang,
                                      audio_ext=".txt", sfield=src_field, tfield=trg_field, num=number,
                                      char_level=char, train=False, check=check_ratio,
-                                     audio_level=audio_features, htk=htk, scale=scale)
+                                     audio_level=audio_features, htk=htk, scale=scale,
+                                     save_computed_dataset=save_computed_dataset,
+                                     load_precomputed_dataset=load_precomputed_dataset,
+                                     save_path=save_path)
         else:
             # no target is given -> create dataset from src only
             test_data = MonoAudioDataset(path=test_path, audio_ext=".txt",
@@ -325,7 +339,7 @@ class AudioDataset(TranslationDataset):
 
     def __init__(self, path: str, text_ext: str, audio_ext: str, sfield: Field, tfield: Field,
                  num: int, char_level: bool, train: bool, check: int, audio_level: str, htk: bool,
-                 scale: str, **kwargs) -> None:
+                 scale: str, save_computed_dataset: bool, load_precomputed_dataset: str, save_path: str,  **kwargs) -> None:
         """Create an AudioDataset given path and fields.
 
             :param path: Prefix of path to the data files
@@ -356,8 +370,15 @@ class AudioDataset(TranslationDataset):
             log_path = os.path.expanduser(path + '_length_statistics')
             length_info = open(log_path, 'a')
 
-        if len(open(text_path).read().splitlines()) != len(open(audio_path).read().splitlines()):
+        if load_precomputed_dataset and train:
+            print("Loading train dataset from: {}".format(save_path))
+            with open(save_path, "rb") as f:
+                examples = dill.load(f)
+            print("Done loading\n")
+
+        elif len(open(text_path).read().splitlines()) != len(open(audio_path).read().splitlines()):
             raise IndexError('The size of the text and audio dataset differs.')
+
         else:
             with open(text_path) as text_file, open(audio_path) as audio_file:
                 for text_line, audio_line in zip(text_file, audio_file):
@@ -479,9 +500,19 @@ class AudioDataset(TranslationDataset):
                         print("Check the text line: ", text_line,
                               " or audio file: ", audio_line)
         if train:
-            length_info.write('mini={0}, maxi={1}, mean={2}, checked by {3} \n'.format(
-                mini, maxi, summa / count, check))
-            length_info.close()
+            if not load_precomputed_dataset:
+                length_info.write('mini={0}, maxi={1}, mean={2}, checked by {3} \n'.format(
+                    mini, maxi, summa / count, check))
+                length_info.close()
+            else:
+                length_info.close()
+
+            if save_computed_dataset:
+                print("Saving train_dataset to: {}".format(save_path))
+                with open(save_path, "wb")as f:
+                    dill.dump(examples, f)
+                print("Done Saving\n")
+
         super(TranslationDataset, self).__init__(
             examples, all_fields, **kwargs)
 
