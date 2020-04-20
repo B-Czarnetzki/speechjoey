@@ -6,13 +6,16 @@ data: # specify your data here
     src: "de"  # src language: expected suffix of train files, e.g. "train.de"
     trg: "en"  # trg language
     audio: "src" # the language for the speech processing output, default: src
-    audio_features_level: "mfcc_deltas" # default: "mfcc", other option: "mel_fb"
+    audio_features_level: "mfcc_berard_et_al" # default: "mfcc", other option: "mel_fb"
     use_htk: True # use HTK formula or Slaney for for mel filters
     #scale: "None" # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "develop/raw/head"  # training data
     dev: "develop/raw/head"  # development data for validation
     test: "develop/raw/head"  # test data for testing final model; optional
     level: "char" # segmentation level: either "word", "bpe" or "char"
+    #save_computed_features: True
+    load_precomputed_features: True
+    save_path: "./features_save_test"
     lowercase: True # lowercase the data, also for validation
     max_sent_length: 150 # filter out longer sentences from training (src+trg)
     max_audio_length: 1000 # filter out longer audio files from training
@@ -60,9 +63,9 @@ training: # specify training details here
 model:  # specify your model architecture here
     tied_embeddings: False  # tie src and trg embeddings, only applicable if vocabularies are the same, default: False
     encoder:
-        rnn_type: "gru" # type of recurrent unit to use, either "gru" or "lstm", default: "lstm"
+        rnn_type: "lstm" # type of recurrent unit to use, either "gru" or "lstm", default: "lstm"
         embeddings:
-            embedding_dim: 39 # size of embeddings
+            embedding_dim: 41 # size of embeddings
             scale: False  # scale the embeddings by sqrt of their size, default: False
             freeze: True  # if True, embeddings are not updated during training
         hidden_size: 256 # size of RNN
@@ -80,7 +83,7 @@ model:  # specify your model architecture here
         emb_norm: False # layer normalization layers for embeddings, default: False
         same_weights: False # use same weights for linear layers, default: False
     decoder:
-        rnn_type: "gru"
+        rnn_type: "lstm"
         embeddings:
             embedding_dim: 20
             scale: False

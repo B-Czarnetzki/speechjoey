@@ -260,8 +260,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     scale = data_cfg.get("scale", None)
 
     # For train dataset saving:
-    save_computed_dataset = data_cfg.get("save_computed_dataset", False)
-    load_precomputed_dataset = data_cfg.get("load_precomputed_dataset", False)
+    save_computed_features = data_cfg.get("save_computed_features", False)
+    load_precomputed_features = data_cfg.get("load_precomputed_features", False)
     save_path = data_cfg.get("save_path", None)
 
     # pylint: disable=unnecessary-lambda
@@ -288,8 +288,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                               audio_ext=".txt", sfield=src_field, tfield=trg_field,
                               num=number, char_level=char, train=True,
                               check=check_ratio, audio_level=audio_features, htk=htk,
-                              scale=scale, save_computed_dataset=save_computed_dataset,
-                              load_precomputed_dataset=load_precomputed_dataset,
+                              scale=scale, save_computed_features=save_computed_features,
+                              load_precomputed_features=load_precomputed_features,
                               save_path=save_path, filter_pred=lambda x:
                               len(vars(x)['src']) <= max_audio_length
                               and len(vars(x)['trg']) <= max_sent_length)
@@ -310,8 +310,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                             sfield=src_field, tfield=trg_field, num=number,
                             char_level=char, train=False, check=check_ratio,
                             audio_level=audio_features, htk=htk, scale=scale,
-                            save_computed_dataset=save_computed_dataset,
-                            load_precomputed_dataset=load_precomputed_dataset,
+                            save_computed_features=save_computed_features,
+                            load_precomputed_features=load_precomputed_features,
                             save_path=save_path)
     test_data = None
     if test_path is not None:
@@ -321,8 +321,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                                      audio_ext=".txt", sfield=src_field, tfield=trg_field, num=number,
                                      char_level=char, train=False, check=check_ratio,
                                      audio_level=audio_features, htk=htk, scale=scale,
-                                     save_computed_dataset=save_computed_dataset,
-                                     load_precomputed_dataset=load_precomputed_dataset,
+                                     save_computed_features=save_computed_features,
+                                     load_precomputed_features=load_precomputed_features,
                                      save_path=save_path)
         else:
             # no target is given -> create dataset from src only
@@ -339,7 +339,7 @@ class AudioDataset(TranslationDataset):
 
     def __init__(self, path: str, text_ext: str, audio_ext: str, sfield: Field, tfield: Field,
                  num: int, char_level: bool, train: bool, check: int, audio_level: str, htk: bool,
-                 scale: str, save_computed_dataset: bool, load_precomputed_dataset: str, save_path: str,  **kwargs) -> None:
+                 scale: str, save_computed_features: bool, load_precomputed_features: str, save_path: str,  **kwargs) -> None:
         """Create an AudioDataset given path and fields.
 
             :param path: Prefix of path to the data files
@@ -370,13 +370,7 @@ class AudioDataset(TranslationDataset):
             log_path = os.path.expanduser(path + '_length_statistics')
             length_info = open(log_path, 'a')
 
-        if load_precomputed_dataset and train:
-            print("Loading train dataset from: {}".format(save_path))
-            with open(save_path, "rb") as f:
-                examples = dill.load(f)
-            print("Done loading\n")
-
-        elif len(open(text_path).read().splitlines()) != len(open(audio_path).read().splitlines()):
+        if len(open(text_path).read().splitlines()) != len(open(audio_path).read().splitlines()):
             raise IndexError('The size of the text and audio dataset differs.')
 
         else:
@@ -384,68 +378,86 @@ class AudioDataset(TranslationDataset):
                 for text_line, audio_line in zip(text_file, audio_file):
                     text_line = text_line.strip()
                     audio_line = audio_line.strip()
+                    audio_name = audio_line.split("/")[-1]
+                    audio_feature_file = audio_name.replace(".wav", ".npy")
                     if text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
-                        y, sr = librosa.load(audio_line, sr=None)
-                        # overwrite default values for the window width of 25 ms and stride of 10 ms (for sr = 16kHz)
-                        # (n_fft : length of the FFT window, hop_length : number of samples between successive frames)
-                        # default values: n_fft=2048, hop_length=512, n_mels=128, htk=False
-                        # features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num)
-                        # check which audio features should be extracted, default are mfccs
-                        if audio_level == "mel_fb":
-                            features = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
-                        elif audio_level == "mfcc":
-                            features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
-                        elif audio_level == "mfcc_berard_et_al":
-                            if num != 41:
-                                raise Exception(
-                                    "encoder embedding_dim must be 41 for berard_et_al feature extraction")
+                        if load_precomputed_features:
+                            if not os.path.exists(save_path):
+                                raise FileNotFoundError(
+                                    "No Folder exists at {}, you have to save features before you can load them".format(save_path))
+                            features = np.load(os.path.join(
+                                save_path, audio_feature_file))
+                        else:
+                            y, sr = librosa.load(audio_line, sr=None)
+                            # overwrite default values for the window width of 25 ms and stride of 10 ms (for sr = 16kHz)
+                            # (n_fft : length of the FFT window, hop_length : number of samples between successive frames)
+                            # default values: n_fft=2048, hop_length=512, n_mels=128, htk=False
+                            # features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num)
+                            # check which audio features should be extracted, default are mfccs
+                            if audio_level == "mel_fb":
+                                features = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=int(
+                                    sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
+                            elif audio_level == "mfcc":
+                                features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
+                                    sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
+                            elif audio_level == "mfcc_berard_et_al":
+                                if num != 41:
+                                    raise Exception(
+                                        "encoder embedding_dim must be 41 for berard_et_al feature extraction")
 
-                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
-                                                                 hop_length=int(sr / 100), n_mels=80, htk=htk)
-                            S, phase = librosa.magphase(librosa.stft(
-                                y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
-                            rms = librosa.feature.rms(S=S)
+                                features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
+                                                                     hop_length=int(sr / 100), n_mels=80, htk=htk)
+                                S, phase = librosa.magphase(librosa.stft(
+                                    y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
+                                rms = librosa.feature.rms(S=S)
 
-                            # features_delta_1 = librosa.feature.delta(
-                            #    features_orig, order = 1)
-                            # features_delta_2 = librosa.feature.delta(
-                            #    features_orig, order=2)
+                                # features_delta_1 = librosa.feature.delta(
+                                #    features_orig, order = 1)
+                                # features_delta_2 = librosa.feature.delta(
+                                #    features_orig, order=2)
 
-                            # rms_delta_1 = librosa.feature.delta(rms, order=1)
-                            # rms_delta_2 = librosa.feature.delta(rms, order=2)
+                                # rms_delta_1 = librosa.feature.delta(rms, order=1)
+                                # rms_delta_2 = librosa.feature.delta(rms, order=2)
 
-                            # features = np.concatenate(
-                            #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
-                            features = np.concatenate(
-                                (features_orig, rms), axis=0)
+                                # features = np.concatenate(
+                                #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
+                                features = np.concatenate(
+                                    (features_orig, rms), axis=0)
 
-                        elif audio_level == "mfcc_deltas":
-                            if num != 39:
-                                raise Exception(
-                                    "encoder embedding_dim must be 39 for 'mfcc_deltas' feature extraction")
+                            elif audio_level == "mfcc_deltas":
+                                if num != 39:
+                                    raise Exception(
+                                        "encoder embedding_dim must be 39 for 'mfcc_deltas' feature extraction")
 
-                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
+                                features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=int(
+                                    sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
 
-                            # Only use mFCCs 1-13
-                            features_orig = features_orig[1:]
+                                # Only use mFCCs 1-13
+                                features_orig = features_orig[1:]
 
-                            S, phase = librosa.magphase(librosa.stft(
-                                y, n_fft=int(sr / 40), hop_length=int(sr / 100)))
-                            rms = librosa.feature.rms(S=S)
+                                S, phase = librosa.magphase(librosa.stft(
+                                    y, n_fft=int(sr / 40), hop_length=int(sr / 100)))
+                                rms = librosa.feature.rms(S=S)
 
-                            features_delta_1 = librosa.feature.delta(
-                                features_orig, order=1)
-                            features_delta_2 = librosa.feature.delta(
-                                features_orig, order=2)
+                                features_delta_1 = librosa.feature.delta(
+                                    features_orig, order=1)
+                                features_delta_2 = librosa.feature.delta(
+                                    features_orig, order=2)
 
-                            rms_delta_1 = librosa.feature.delta(rms, order=1)
-                            rms_delta_2 = librosa.feature.delta(rms, order=2)
+                                rms_delta_1 = librosa.feature.delta(
+                                    rms, order=1)
+                                rms_delta_2 = librosa.feature.delta(
+                                    rms, order=2)
 
-                            features = np.concatenate(
-                                (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
+                                features = np.concatenate(
+                                    (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
+
+                        if save_computed_features:
+                            if not os.path.exists(save_path):
+                                os.makedirs(save_path)
+
+                            np.save(os.path.join(
+                                save_path, audio_feature_file), features)
 
                         featuresT = features.T
                         if scale == "norm":
@@ -500,18 +512,9 @@ class AudioDataset(TranslationDataset):
                         print("Check the text line: ", text_line,
                               " or audio file: ", audio_line)
         if train:
-            if not load_precomputed_dataset:
-                length_info.write('mini={0}, maxi={1}, mean={2}, checked by {3} \n'.format(
-                    mini, maxi, summa / count, check))
-                length_info.close()
-            else:
-                length_info.close()
-
-            if save_computed_dataset:
-                print("Saving train_dataset to: {}".format(save_path))
-                with open(save_path, "wb")as f:
-                    dill.dump(examples, f)
-                print("Done Saving\n")
+            length_info.write('mini={0}, maxi={1}, mean={2}, checked by {3} \n'.format(
+                mini, maxi, summa / count, check))
+            length_info.close()
 
         super(TranslationDataset, self).__init__(
             examples, all_fields, **kwargs)
