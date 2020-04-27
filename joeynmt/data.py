@@ -261,7 +261,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
 
     # For train dataset saving:
     save_computed_features = data_cfg.get("save_computed_features", False)
-    load_precomputed_features = data_cfg.get("load_precomputed_features", False)
+    load_precomputed_features = data_cfg.get(
+        "load_precomputed_features", False)
     save_path = data_cfg.get("save_path", None)
 
     # pylint: disable=unnecessary-lambda
@@ -380,137 +381,140 @@ class AudioDataset(TranslationDataset):
                     audio_line = audio_line.strip()
                     audio_name = audio_line.split("/")[-1]
                     audio_feature_file = audio_name.replace(".wav", ".npy")
-                    if text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
-                        if load_precomputed_features:
-                            if not os.path.exists(save_path):
-                                raise FileNotFoundError(
-                                    "No Folder exists at {}, you have to save features before you can load them".format(save_path))
-                            features = np.load(os.path.join(
-                                save_path, audio_feature_file))
-                        else:
-                            y, sr = librosa.load(audio_line, sr=None)
-                            # overwrite default values for the window width of 25 ms and stride of 10 ms (for sr = 16kHz)
-                            # (n_fft : length of the FFT window, hop_length : number of samples between successive frames)
-                            # default values: n_fft=2048, hop_length=512, n_mels=128, htk=False
-                            # features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num)
-                            # check which audio features should be extracted, default are mfccs
-                            if audio_level == "mel_fb":
-                                features = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=int(
-                                    sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
-                            elif audio_level == "mfcc":
-                                features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
-                                    sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
-                            elif audio_level == "mfcc_berard_et_al":
-                                if num != 41:
-                                    raise Exception(
-                                        "encoder embedding_dim must be 41 for berard_et_al feature extraction")
+                    if load_precomputed_features:
+                        if not os.path.exists(save_path):
+                            raise FileNotFoundError(
+                                "No Folder exists at {}, you have to save features before you can load them".format(save_path))
+                        features = np.load(os.path.join(
+                            save_path, audio_feature_file))
 
-                                features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
-                                                                     hop_length=int(sr / 100), n_mels=80, htk=htk)
-                                S, phase = librosa.magphase(librosa.stft(
-                                    y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
-                                rms = librosa.feature.rms(S=S)
+                    else:
+                        if text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
+                            warnings.warn(
+                                'There is an empty text line or audio file.')
+                            print("Check the text line: ", text_line,
+                                  " or audio file: ", audio_line)
+                            continue
 
-                                # features_delta_1 = librosa.feature.delta(
-                                #    features_orig, order = 1)
-                                # features_delta_2 = librosa.feature.delta(
-                                #    features_orig, order=2)
+                        y, sr = librosa.load(audio_line, sr=None)
+                        # overwrite default values for the window width of 25 ms and stride of 10 ms (for sr = 16kHz)
+                        # (n_fft : length of the FFT window, hop_length : number of samples between successive frames)
+                        # default values: n_fft=2048, hop_length=512, n_mels=128, htk=False
+                        # features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num)
+                        # check which audio features should be extracted, default are mfccs
+                        if audio_level == "mel_fb":
+                            features = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=int(
+                                sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
+                        elif audio_level == "mfcc":
+                            features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
+                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
+                        elif audio_level == "mfcc_berard_et_al":
+                            if num != 41:
+                                raise Exception(
+                                    "encoder embedding_dim must be 41 for berard_et_al feature extraction")
 
-                                # rms_delta_1 = librosa.feature.delta(rms, order=1)
-                                # rms_delta_2 = librosa.feature.delta(rms, order=2)
+                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
+                                                                 hop_length=int(sr / 100), n_mels=80, htk=htk)
+                            S, phase = librosa.magphase(librosa.stft(
+                                y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
+                            rms = librosa.feature.rms(S=S)
 
-                                # features = np.concatenate(
-                                #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
-                                features = np.concatenate(
-                                    (features_orig, rms), axis=0)
+                            # features_delta_1 = librosa.feature.delta(
+                            #    features_orig, order = 1)
+                            # features_delta_2 = librosa.feature.delta(
+                            #    features_orig, order=2)
 
-                            elif audio_level == "mfcc_deltas":
-                                if num != 39:
-                                    raise Exception(
-                                        "encoder embedding_dim must be 39 for 'mfcc_deltas' feature extraction")
+                            # rms_delta_1 = librosa.feature.delta(rms, order=1)
+                            # rms_delta_2 = librosa.feature.delta(rms, order=2)
 
-                                features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=int(
-                                    sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
+                            # features = np.concatenate(
+                            #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
+                            features = np.concatenate(
+                                (features_orig, rms), axis=0)
 
-                                # Only use mFCCs 1-13
-                                features_orig = features_orig[1:]
+                        elif audio_level == "mfcc_deltas":
+                            if num != 39:
+                                raise Exception(
+                                    "encoder embedding_dim must be 39 for 'mfcc_deltas' feature extraction")
 
-                                S, phase = librosa.magphase(librosa.stft(
-                                    y, n_fft=int(sr / 40), hop_length=int(sr / 100)))
-                                rms = librosa.feature.rms(S=S)
+                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=int(
+                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
 
-                                features_delta_1 = librosa.feature.delta(
-                                    features_orig, order=1)
-                                features_delta_2 = librosa.feature.delta(
-                                    features_orig, order=2)
+                            # Only use mFCCs 1-13
+                            features_orig = features_orig[1:]
 
-                                rms_delta_1 = librosa.feature.delta(
-                                    rms, order=1)
-                                rms_delta_2 = librosa.feature.delta(
-                                    rms, order=2)
+                            S, phase = librosa.magphase(librosa.stft(
+                                y, n_fft=int(sr / 40), hop_length=int(sr / 100)))
+                            rms = librosa.feature.rms(S=S)
 
-                                features = np.concatenate(
-                                    (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
+                            features_delta_1 = librosa.feature.delta(
+                                features_orig, order=1)
+                            features_delta_2 = librosa.feature.delta(
+                                features_orig, order=2)
 
-                        if save_computed_features:
-                            if not os.path.exists(save_path):
-                                os.makedirs(save_path)
+                            rms_delta_1 = librosa.feature.delta(
+                                rms, order=1)
+                            rms_delta_2 = librosa.feature.delta(
+                                rms, order=2)
 
-                            np.save(os.path.join(
-                                save_path, audio_feature_file), features)
+                            features = np.concatenate(
+                                (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
 
-                        featuresT = features.T
-                        if scale == "norm":
-                            # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
-                            # the input array is scaled to the norm between -1 and 1
-                            featuresNorm = librosa.util.normalize(featuresT)
-                        elif scale == "mean":
-                            featuresT = sklearn.preprocessing.scale(
-                                featuresT, with_std=False)  # center to the mean
-                        elif scale == "unit_var":
-                            # component-wise scale to unit variance
-                            featuresT = sklearn.preprocessing.scale(
-                                featuresT, with_mean=False)
-                        elif scale == "all":
-                            # center to the mean and component-wise scale to unit variance
-                            featuresT = sklearn.preprocessing.scale(featuresT)
-                        featureS = torch.Tensor(featuresT)
-                        if char_level:
-                            # print("FeatureT shape: ", featuresT.shape[0])
-                            # generate a line with <unk> of given size
-                            audio_dummy = "a" * (featuresT.shape[0])
+                    if save_computed_features:
+                        if not os.path.exists(save_path):
+                            os.makedirs(save_path)
 
-                            conv_dummy = "a" * \
-                                int(math.ceil(
-                                    math.ceil(featuresT.shape[0] / 2) / 2) - 1)
-                            # print("Conv dummy length: ", int(math.ceil(
-                            #    math.ceil(featuresT.shape[0] / 2) / 2) - 1))
-                        else:
-                            # generate a line with <unk> of given size
-                            audio_dummy = "a " * (featuresT.shape[0])
-                            conv_dummy = "a " * \
-                                int(round(
-                                    round(featuresT.shape[0] / 2) / 2))
-                        if train:
-                            length_ratio = featuresT.shape[0] // (
-                                len(text_line) + 1)
-                            if length_ratio < check:
-                                examples.append(data.Example.fromlist(
-                                    [text_line, featureS, audio_dummy, conv_dummy], all_fields))
-                            if length_ratio > maxi:
-                                maxi = length_ratio
-                            if length_ratio < mini:
-                                mini = length_ratio
-                            summa += length_ratio
-                            count += 1
-                        else:
+                        np.save(os.path.join(
+                            save_path, audio_feature_file), features)
+
+                    featuresT = features.T
+                    if scale == "norm":
+                        # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
+                        # the input array is scaled to the norm between -1 and 1
+                        featuresNorm = librosa.util.normalize(featuresT)
+                    elif scale == "mean":
+                        featuresT = sklearn.preprocessing.scale(
+                            featuresT, with_std=False)  # center to the mean
+                    elif scale == "unit_var":
+                        # component-wise scale to unit variance
+                        featuresT = sklearn.preprocessing.scale(
+                            featuresT, with_mean=False)
+                    elif scale == "all":
+                        # center to the mean and component-wise scale to unit variance
+                        featuresT = sklearn.preprocessing.scale(featuresT)
+                    featureS = torch.Tensor(featuresT)
+                    if char_level:
+                        # print("FeatureT shape: ", featuresT.shape[0])
+                        # generate a line with <unk> of given size
+                        audio_dummy = "a" * (featuresT.shape[0])
+
+                        conv_dummy = "a" * \
+                            int(math.ceil(
+                                math.ceil(featuresT.shape[0] / 2) / 2) - 1)
+                        # print("Conv dummy length: ", int(math.ceil(
+                        #    math.ceil(featuresT.shape[0] / 2) / 2) - 1))
+                    else:
+                        # generate a line with <unk> of given size
+                        audio_dummy = "a " * (featuresT.shape[0])
+                        conv_dummy = "a " * \
+                            int(round(
+                                round(featuresT.shape[0] / 2) / 2))
+                    if train:
+                        length_ratio = featuresT.shape[0] // (
+                            len(text_line) + 1)
+                        if length_ratio < check:
                             examples.append(data.Example.fromlist(
                                 [text_line, featureS, audio_dummy, conv_dummy], all_fields))
+                        if length_ratio > maxi:
+                            maxi = length_ratio
+                        if length_ratio < mini:
+                            mini = length_ratio
+                        summa += length_ratio
+                        count += 1
                     else:
-                        warnings.warn(
-                            'There is an empty text line or audio file.')
-                        print("Check the text line: ", text_line,
-                              " or audio file: ", audio_line)
+                        examples.append(data.Example.fromlist(
+                            [text_line, featureS, audio_dummy, conv_dummy], all_fields))
+
         if train:
             length_info.write('mini={0}, maxi={1}, mean={2}, checked by {3} \n'.format(
                 mini, maxi, summa / count, check))
