@@ -468,6 +468,7 @@ class AudioDataset(TranslationDataset):
                             save_path, audio_feature_file), features)
 
                     featuresT = features.T
+                    print(featuresT.shape)
                     if scale == "norm":
                         # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
                         # the input array is scaled to the norm between -1 and 1
