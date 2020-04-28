@@ -485,6 +485,7 @@ class ConditionalRecurrentDecoder(Decoder):
             p=init_state_dropout, inplace=False)
         self.hidden_size = hidden_size
         self.emb_size = emb_size
+        self.bidir_projection = encoder.bidir_projection
 
         rnn = nn.GRU if rnn_type == "gru" else nn.LSTM
 
@@ -530,8 +531,12 @@ class ConditionalRecurrentDecoder(Decoder):
         # to initialize from the final encoder state of last layer
         self.init_hidden_option = init_hidden
         if self.init_hidden_option == "bridge":
-            self.bridge_layer = nn.Linear(
-                encoder.output_size, hidden_size, bias=True)
+            if self.bidir_projection:
+                self.bridge_layer = nn.Linear(
+                    encoder.output_size * 2, hidden_size, bias=True)
+            else:
+                self.bridge_layer = nn.Linear(
+                    encoder.output_size, hidden_size, bias=True)
         elif self.init_hidden_option == "last":
             if encoder.output_size != self.hidden_size:
                 if encoder.output_size != 2 * self.hidden_size:  # bidirectional
@@ -594,7 +599,10 @@ class ConditionalRecurrentDecoder(Decoder):
         """
         assert len(encoder_output.shape) == 3
         assert len(encoder_hidden.shape) == 2
-        assert encoder_hidden.shape[-1] == encoder_output.shape[-1]
+        if self.bidir_projection:
+            assert encoder_hidden.shape[-1] / 2 == encoder_output.shape[-1]
+        else:
+            assert encoder_hidden.shape[-1] == encoder_output.shape[-1]
         assert src_mask.shape[1] == 1
         assert src_mask.shape[0] == encoder_output.shape[0]
         assert src_mask.shape[2] == encoder_output.shape[1]
@@ -752,10 +760,10 @@ class ConditionalRecurrentDecoder(Decoder):
         # initialize decoder hidden state from final encoder hidden state
         if hidden is None:
             hidden = self._init_hidden(encoder_hidden)
-            if self.type == "gru":
-                hidden = self.init_state_dropout(hidden)
-            else:
-                hidden = (self.init_state_dropout(hidden[0]), hidden[1])
+            # if self.type == "gru":
+            #   hidden = self.init_state_dropout(hidden)
+            # else:
+            #   hidden = (self.init_state_dropout(hidden[0]), hidden[1])
 
         # pre-compute projected encoder outputs
         # (the "keys" for the attention mechanism)
@@ -826,6 +834,9 @@ class ConditionalRecurrentDecoder(Decoder):
         # for multiple layers: is the same for all layers
         if self.init_hidden_option == "bridge" and encoder_final is not None:
             # num_layers x batch_size x hidden_size
+
+            encoder_final = self.init_state_dropout(encoder_final)
+
             hidden = torch.tanh(
                 self.bridge_layer(encoder_final)).unsqueeze(0).repeat(
                 self.num_layers, 1, 1)

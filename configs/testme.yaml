@@ -79,6 +79,7 @@ model:  # specify your model architecture here
         freeze: False  # if True, encoder parameters are not updated during training (does not include embedding parameters)
         activation: "tanh" # activation type for 2 layers following the src embeddings (only for speech), default: "relu", other options: "tanh"
         last_activation: "relu" # non-linear activation after RNNs in speech encoder, default: "None", other options: "tanh", "relu"
+        bidir_projection: True # Projects bidir encoder outputs (2*hidden_size) to encoder outputs size = hidden_size, via a linear layer (only use if decoder init_hidden=bridge)
         layer_norm: False # layer normalization layers for 2 CNNs and RNN layer, default: False
         emb_norm: False # layer normalization layers for embeddings, default: False
         same_weights: False # use same weights for linear layers, default: False
@@ -91,7 +92,7 @@ model:  # specify your model architecture here
         hidden_size: 50
         dropout: 0.2
         hidden_dropout: 0.2 # apply dropout to the attention vector, default: 0.0
-        init_state_dropout: 0.2
+        init_state_dropout: 0.2 # dropout bridge_layer input (only used if init_hidden=bridge)
         num_layers: 1
         input_feeding: False # combine hidden state and attention vector before feeding to rnn, default: True
         init_hidden: "bridge" # initialized the decoder hidden state: use linear projection of last encoder state ("bridge") or simply the last state ("last") or zeros ("zero"), default: "bridge"

@@ -164,6 +164,7 @@ class SpeechRecurrentEncoder(Encoder):
                  rnn_input_dropout=0.,
                  input_layer_dropout=0.,
                  bidirectional: bool = True,
+                 bidir_projection: bool = False,
                  freeze: bool = False,
                  activation: str = "tanh",
                  layer_norm: bool = False,
@@ -197,8 +198,11 @@ class SpeechRecurrentEncoder(Encoder):
             p=input_layer_dropout, inplace=False)
         self.type = rnn_type
         self.emb_size = emb_size
+        self.bidir_projection = bidir_projection
         self.lila1 = nn.Linear(emb_size, linear_hidden_size_1)
         self.lila2 = nn.Linear(linear_hidden_size_1, linear_hidden_size_2)
+        self.bidir_projection_layer = nn.Linear(
+            2 * hidden_size, hidden_size, bias=False)
         self.activation = activation
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, 16,
@@ -224,6 +228,9 @@ class SpeechRecurrentEncoder(Encoder):
             dropout=dropout if num_layers > 1 else 0.)
 
         self._output_size = 2 * hidden_size if bidirectional else hidden_size
+
+        if bidir_projection and bidirectional:
+            self._output_size = hidden_size
 
         if freeze:
             freeze_params(self)
@@ -281,7 +288,9 @@ class SpeechRecurrentEncoder(Encoder):
             lila_out2 = self.input_layer_dropout(lila_out2)
         else:
             lila_out1 = torch.relu(self.lila1(embed_src))
+            lila_out1 = self.input_layer_dropout(lila_out1)
             lila_out2 = torch.relu(self.lila2(lila_out1))
+            lila_out2 = self.input_layer_dropout(lila_out2)
 
         lila_out2 = lila_out2.unsqueeze(1)
         #print("\nlila1 output shape: ", lila_out1.size())
@@ -330,6 +339,10 @@ class SpeechRecurrentEncoder(Encoder):
 
         # hidden: dir*layers x batch x hidden
         # output: batch x max_length x directions*hidden
+
+        if self.bidir_projection and self.rnn.bidirectional:
+            output = self.bidir_projection_layer(output)
+
         batch_size = hidden.size()[1]
         # separate final hidden states by layer and direction
         hidden_layerwise = hidden.view(self.rnn.num_layers,
