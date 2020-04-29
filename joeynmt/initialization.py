@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.init import _calculate_fan_in_and_fan_out
+from joeynmt.helpers import vdp_LSTM
 
 
 def orthogonal_rnn_init_(cell: nn.RNNBase, gain: float = 1.):
@@ -143,7 +144,9 @@ def initialize_model(model: nn.Module, cfg: dict, src_padding_idx: int,
                 if init == "xavier" and "rnn" in name:
                     n = 1
                     if "encoder" in name:
-                        n = 4 if isinstance(model.encoder.rnn, nn.LSTM) else 3
+                        n = 4 if isinstance(
+                            model.encoder.rnn, nn.LSTM) or isinstance(model.encoder.rnn, vdp_LSTM) else 3
+                        print(n)
                     elif "decoder" in name:
                         n = 4 if isinstance(model.decoder.rnn, nn.LSTM) else 3
                     xavier_uniform_n_(p.data, gain=gain, n=n)

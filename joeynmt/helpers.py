@@ -16,7 +16,10 @@ import numpy as np
 
 import torch
 from torch import nn, Tensor
+from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
 
 from torchtext.data import Dataset
 import yaml
@@ -138,12 +141,12 @@ def log_data_info(train_data: Dataset, valid_data: Dataset, test_data: Dataset,
     """
     logging_function(
         "Data set sizes: \n\ttrain %d,\n\tvalid %d,\n\ttest %d",
-            len(train_data), len(valid_data),
-            len(test_data) if test_data is not None else 0)
+        len(train_data), len(valid_data),
+        len(test_data) if test_data is not None else 0)
 
     logging_function("First training example:\n\t[SRC] %s\n\t[TRG] %s",
-        " ".join(vars(train_data[0])['src']),
-        " ".join(vars(train_data[0])['trg']))
+                     " ".join(vars(train_data[0])['src']),
+                     " ".join(vars(train_data[0])['trg']))
 
     logging_function("First 10 words (src): %s", " ".join(
         '(%d) %s' % (i, t) for i, t in enumerate(src_vocab.itos[:10])))
@@ -298,3 +301,58 @@ def symlink_update(target, link_name):
             os.symlink(target, link_name)
         else:
             raise e
+
+
+class vdp_LSTM(nn.Module):
+    def __init__(self, embedding_size, hidden_size, num_layers,
+                 idrop=0.0, batch_first=True, bidirectional=True):
+        super(vdp_LSTM, self).__init__()
+        # Modified LockedDropout that support batch first arrangement
+        self.lockdrop = LockedDropout(batch_first=batch_first)
+        self.hidden_size = hidden_size
+        self.idrop = idrop
+        self.num_layers = num_layers
+        self.bidirectional = bidirectional
+        directions = 2 if bidirectional else 1
+        self.rnns = [
+            nn.LSTM(embedding_size if l == 0 else hidden_size * directions,
+                    hidden_size, num_layers=1, batch_first=batch_first, bidirectional=bidirectional)
+            for l in range(num_layers)
+        ]
+
+        self.rnns = torch.nn.ModuleList(self.rnns)
+
+    def forward(self, input, conv_length):
+        raw_output = self.lockdrop(input, self.idrop)
+        raw_output = pack_padded_sequence(
+            raw_output, conv_length, batch_first=True)
+        new_hidden = []
+        for l, rnn in enumerate(self.rnns):
+            raw_output, (n_hidden, n_cell) = rnn(raw_output)
+            if l < self.num_layers:
+                raw_output, _ = pad_packed_sequence(
+                    raw_output, batch_first=True)
+                raw_output = self.lockdrop(raw_output, self.idrop)
+                raw_output = pack_padded_sequence(
+                    raw_output, conv_length, batch_first=True)
+            new_hidden.append(n_hidden)
+        hidden = torch.cat(new_hidden, 0)
+        return raw_output, hidden
+
+
+class LockedDropout(nn.Module):
+    def __init__(self, batch_first):
+        super().__init__()
+        self.batch_first = batch_first
+
+    def forward(self, x, dropout=0.0):
+        if not self.training or not dropout:
+            return x
+        if self.batch_first:
+            m = x.data.new(x.size(0), 1, x.size(2)
+                           ).bernoulli_(1 - dropout)
+        else:
+            m = x.data.new(1, x.size(1), x.size(2)).bernoulli_(1 - dropout)
+        mask = Variable(m, requires_grad=False) / (1 - dropout)
+        mask = mask.expand_as(x)
+        return mask * x

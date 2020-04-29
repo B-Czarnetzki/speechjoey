@@ -3,14 +3,14 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, PackedSequence
 
-from joeynmt.helpers import freeze_params
+from joeynmt.helpers import freeze_params, vdp_LSTM
 from joeynmt.transformer_layers import \
     TransformerEncoderLayer, PositionalEncoding
 
 
-#pylint: disable=abstract-method
+# pylint: disable=abstract-method
 
 
 class Encoder(nn.Module):
@@ -29,7 +29,7 @@ class Encoder(nn.Module):
 
 class RecurrentEncoder(Encoder):
     """Encodes a sequence of word embeddings"""
-    #pylint: disable=unused-argument
+    # pylint: disable=unused-argument
 
     def __init__(self,
                  rnn_type: str = "gru",
@@ -88,7 +88,7 @@ class RecurrentEncoder(Encoder):
         assert embed_src.shape[2] == self.emb_size
         assert len(src_length.shape) == 1
 
-    #pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ
     def forward(self, embed_src: Tensor, src_length: Tensor, mask: Tensor) \
             -> (Tensor, Tensor):
         """
@@ -118,7 +118,7 @@ class RecurrentEncoder(Encoder):
         packed = pack_padded_sequence(embed_src, src_length, batch_first=True)
         output, hidden = self.rnn(packed)
 
-        #pylint: disable=unused-variable
+        # pylint: disable=unused-variable
         if isinstance(hidden, tuple):
             hidden, memory_cell = hidden
 
@@ -138,7 +138,7 @@ class RecurrentEncoder(Encoder):
         bwd_hidden_last = hidden_layerwise[-1:, 1]
 
         # only feed the final state of the top-most layer to the decoder
-        #pylint: disable=no-member
+        # pylint: disable=no-member
         hidden_concat = torch.cat(
             [fwd_hidden_last, bwd_hidden_last], dim=2).squeeze(0)
         # final: batch x directions*hidden
@@ -151,7 +151,7 @@ class RecurrentEncoder(Encoder):
 class SpeechRecurrentEncoder(Encoder):
     """Encodes a sequence of word embeddings"""
 
-    #pylint: disable=unused-argument
+    # pylint: disable=unused-argument
     def __init__(self,
                  rnn_type: str = "gru",
                  hidden_size: int = 1,
@@ -159,12 +159,13 @@ class SpeechRecurrentEncoder(Encoder):
                  linear_hidden_size_2: int = 1,
                  emb_size: int = 1,
                  num_layers: int = 1,
-                 dropout: float = 0.,
+                 rnn_output_dropout: float = 0.,
                  emb_dropout: float = 0.,
-                 rnn_input_dropout=0.,
-                 input_layer_dropout=0.,
+                 rnn_input_dropout: float = 0.,
+                 input_layer_dropout: float = 0.,
                  bidirectional: bool = True,
                  bidir_projection: bool = False,
+                 variational_dropout: bool = False,
                  freeze: bool = False,
                  activation: str = "tanh",
                  layer_norm: bool = False,
@@ -186,16 +187,18 @@ class SpeechRecurrentEncoder(Encoder):
 
         super(SpeechRecurrentEncoder, self).__init__()
 
-        #print("\n" * 10)
-        #print("Dropout: ", dropout)
-        #print("Emb_dropout: ", emb_dropout)
-        #print("rnn_input_dropout: ", rnn_input_dropout)
+        # print("\n" * 10)
+        # print("Dropout: ", dropout)
+        # print("Emb_dropout: ", emb_dropout)
+        # print("rnn_input_dropout: ", rnn_input_dropout)
 
         self.emb_dropout = torch.nn.Dropout(p=emb_dropout, inplace=False)
-        self.rnn_input_dropout = torch.nn.Dropout(
+        self.rnn_input_dropout = rnn_input_dropout
+        self.rnn_input_dropout_layer = torch.nn.Dropout(
             p=rnn_input_dropout, inplace=False)
         self.input_layer_dropout = torch.nn.Dropout(
             p=input_layer_dropout, inplace=False)
+        self.variational_dropout = variational_dropout
         self.type = rnn_type
         self.emb_size = emb_size
         self.bidir_projection = bidir_projection
@@ -222,10 +225,18 @@ class SpeechRecurrentEncoder(Encoder):
 
         rnn = nn.GRU if rnn_type == "gru" else nn.LSTM
 
-        self.rnn = rnn(
-            4 * linear_hidden_size_2, hidden_size, num_layers, batch_first=True,
-            bidirectional=bidirectional,
-            dropout=dropout if num_layers > 1 else 0.)
+        if variational_dropout:
+            if rnn_type == "gru":
+                raise NotImmplementedError(
+                    "variational_dropout is only implemented for LSTM")
+            self.rnn = vdp_LSTM(4 * linear_hidden_size_2, hidden_size, num_layers, bidirectional=bidirectional, batch_first=True,
+                                idrop=rnn_input_dropout)
+
+        else:
+            self.rnn = rnn(
+                4 * linear_hidden_size_2, hidden_size, num_layers, batch_first=True,
+                bidirectional=bidirectional,
+                dropout=rnn_output_dropout if num_layers > 1 else 0.)
 
         self._output_size = 2 * hidden_size if bidirectional else hidden_size
 
@@ -249,7 +260,7 @@ class SpeechRecurrentEncoder(Encoder):
         assert embed_src.shape[2] == self.emb_size
         assert len(src_length.shape) == 1
 
-    #pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ
     def forward(self, embed_src: Tensor, src_length: Tensor, mask: Tensor,
                 conv_length: Tensor) -> (Tensor, Tensor):
         """
@@ -279,7 +290,7 @@ class SpeechRecurrentEncoder(Encoder):
         # apply dropout to the rnn input
         embed_src = self.emb_dropout(embed_src)
 
-        #print("Embedding shape: ", embed_src.size())
+        # print("Embedding shape: ", embed_src.size())
         # 2 layers with nonlinear activation
         if self.activation == "tanh":
             lila_out1 = torch.tanh(self.lila1(embed_src))
@@ -293,20 +304,20 @@ class SpeechRecurrentEncoder(Encoder):
             lila_out2 = self.input_layer_dropout(lila_out2)
 
         lila_out2 = lila_out2.unsqueeze(1)
-        #print("\nlila1 output shape: ", lila_out1.size())
-        #print("Convolution input shape: ", lila_out2.size())
+        # print("\nlila1 output shape: ", lila_out1.size())
+        # print("Convolution input shape: ", lila_out2.size())
         # 2 convolutional layers
         conv_out1 = self.conv1(lila_out2)
-        #print("Convolution 1 output shape: ", conv_out1.size())
+        # print("Convolution 1 output shape: ", conv_out1.size())
 
         # layer normalization
         if self.layer_norm:
             conv_out1 = self.norm1(conv_out1)
 
         conv_out2 = self.conv2(conv_out1)
-        #print("Convolution 2 output shape: ", conv_out2.size())
+        # print("Convolution 2 output shape: ", conv_out2.size())
         conv_out2 = conv_out2.transpose(1, 3).transpose(1, 2)
-        #print("Convolution 2 output tranposed: ", conv_out2.size())
+        # print("Convolution 2 output tranposed: ", conv_out2.size())
 
         conv_out2 = conv_out2.flatten(start_dim=2)
 
@@ -314,28 +325,30 @@ class SpeechRecurrentEncoder(Encoder):
         if self.layer_norm:
             conv_out2 = self.norm2(conv_out2)
 
-        #print("convolution 2 output flattend: ", conv_out2.size())
+        # print("convolution 2 output flattend: ", conv_out2.size())
         # apply dropout to the rnn input
-        conv_do = self.rnn_input_dropout(conv_out2)
 
-        # print(conv_do.size())
-        #print("convolution length", conv_length)
-        #print("conv length: ", conv_length)
-        packed = pack_padded_sequence(conv_do, conv_length, batch_first=True)
-        #print("Packed shape: ", packed[0].size())
+        if not self.variational_dropout:
+            conv_out2 = self.rnn_input_dropout_layer(
+                conv_out2)
 
-        #print("packed: ", packed)
-        output, hidden = self.rnn(packed)
+        packed = pack_padded_sequence(conv_out2, conv_length, batch_first=True)
 
-        #print("output", output[0].shape)
+        if self.variational_dropout:
+            output, hidden = self.rnn(conv_out2, conv_length)
+        else:
+            output, hidden = self.rnn(packed)
 
-        #pylint: disable=unused-variable
+        # print("output", output[0].shape)
+
+        # pylint: disable=unused-variable
         if isinstance(hidden, tuple):
+            print("hallo")
             hidden, memory_cell = hidden
 
-        #print("rnn output shape: ", output[0].size())
+        # print("rnn output shape: ", output[0].size())
         output, _ = pad_packed_sequence(output, batch_first=True)
-        #print("rnn padded output shape: ", output.size())
+        # print("rnn padded output shape: ", output.size())
 
         # hidden: dir*layers x batch x hidden
         # output: batch x max_length x directions*hidden
@@ -356,7 +369,7 @@ class SpeechRecurrentEncoder(Encoder):
         bwd_hidden_last = hidden_layerwise[-1:, 1]
 
         # only feed the final state of the top-most layer to the decoder
-        #pylint: disable=no-member
+        # pylint: disable=no-member
         hidden_concat = torch.cat(
             [fwd_hidden_last, bwd_hidden_last], dim=2).squeeze(0)
 
@@ -377,15 +390,15 @@ class TransformerEncoder(Encoder):
     Transformer Encoder
     """
 
-    #pylint: disable=unused-argument
+    # pylint: disable=unused-argument
     def __init__(self,
-                 hidden_size: int = 512,
-                 ff_size: int = 2048,
-                 num_layers: int = 8,
-                 num_heads: int = 4,
-                 dropout: float = 0.1,
-                 emb_dropout: float = 0.1,
-                 freeze: bool = False,
+                 hidden_size: int=512,
+                 ff_size: int=2048,
+                 num_layers: int=8,
+                 num_heads: int=4,
+                 dropout: float=0.1,
+                 emb_dropout: float=0.1,
+                 freeze: bool=False,
                  **kwargs):
         """
         Initializes the Transformer.
@@ -416,7 +429,7 @@ class TransformerEncoder(Encoder):
         if freeze:
             freeze_params(self)
 
-    #pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ
     def forward(self,
                 embed_src: Tensor,
                 src_length: Tensor,

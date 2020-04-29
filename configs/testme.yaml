@@ -40,8 +40,8 @@ training: # specify training details here
     #clip_grad_val: 1.0  # clip the gradients to this value when they exceed it, optional
     #clip_grad_norm: 1.0  # norm clipping instead of value clipping
     weight_decay: 0.1 # l2 regularization, default: 0
-    batch_size: 1  # mini-batch size, required
-    batch_multiplier: 2  # increase the effective batch size with values >1 to batch_multiplier*batch_size without increasing memory consumption by making updates only every batch_multiplier batches
+    batch_size: 14  # mini-batch size, required
+    batch_multiplier: 1  # increase the effective batch size with values >1 to batch_multiplier*batch_size without increasing memory consumption by making updates only every batch_multiplier batches
     #scheduling: "decaying" # learning rate scheduling, optional, if not specified stays constant, options: "plateau", "exponential", "decaying"
     #patience: 5 # specific to plateau scheduler: wait for this many validations without improvement before decreasing the learning rate
     #decrease_factor: 0.5  # specific to plateau & exponential scheduler: decrease the learning rate by this factor
@@ -72,14 +72,15 @@ model:  # specify your model architecture here
         linear_hidden_size_1: 256 # size of first input linear layer
         linear_hidden_size_2: 128 # size of second linear layer
         bidirectional: True # use a bi-directional encoder, default: True
-        dropout: 0.2  # apply dropout to the inputs to the RNN, default: 0.0
-        rnn_input_dropout: 0.2
-        input_layer_dropout: 0.2
+        rnn_output_dropout: 0.2  # apply dropout to the rnn outputs if num_layers > 1 (only applies to num_layers-1 not the last, default: 0.0
+        rnn_input_dropout: 0.2 # apply dropout to the rnn input default: 0.0
+        variational_dropout: True # Use variational dropout
+        input_layer_dropout: 0.2 # apply dropout after each input linear layer, default: 0.0
         num_layers: 3 # stack this many layers of equal size, default: 1
         freeze: False  # if True, encoder parameters are not updated during training (does not include embedding parameters)
         activation: "tanh" # activation type for 2 layers following the src embeddings (only for speech), default: "relu", other options: "tanh"
         last_activation: "relu" # non-linear activation after RNNs in speech encoder, default: "None", other options: "tanh", "relu"
-        bidir_projection: True # Projects bidir encoder outputs (2*hidden_size) to encoder outputs size = hidden_size, via a linear layer (only use if decoder init_hidden=bridge)
+        #bidir_projection: True # Projects bidir encoder outputs (2*hidden_size) to encoder outputs size = hidden_size, via a linear layer (only use if decoder init_hidden=bridge)
         layer_norm: False # layer normalization layers for 2 CNNs and RNN layer, default: False
         emb_norm: False # layer normalization layers for embeddings, default: False
         same_weights: False # use same weights for linear layers, default: False
