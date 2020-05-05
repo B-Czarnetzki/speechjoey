@@ -389,7 +389,7 @@ class AudioDataset(TranslationDataset):
                             save_path, audio_feature_file))
 
                     else:
-                        if text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
+                        if not text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
                             warnings.warn(
                                 'There is an empty text line or audio file.')
                             print("Check the text line: ", text_line,
@@ -407,14 +407,14 @@ class AudioDataset(TranslationDataset):
                                 sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
                         elif audio_level == "mfcc":
                             features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
+                                sr / 40), hop_length=int(sr / 100), n_mels=40, htk=htk)
                         elif audio_level == "mfcc_berard_et_al":
                             if num != 41:
                                 raise Exception(
                                     "encoder embedding_dim must be 41 for berard_et_al feature extraction")
 
                             features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
-                                                                 hop_length=int(sr / 100), n_mels=80, htk=htk)
+                                                                 hop_length=int(sr / 100), n_mels=39, htk=htk)
                             S, phase = librosa.magphase(librosa.stft(
                                 y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
                             rms = librosa.feature.rms(S=S)
@@ -467,7 +467,7 @@ class AudioDataset(TranslationDataset):
                         np.save(os.path.join(
                             save_path, audio_feature_file), features)
 
-                    featuresT = features.T
+                    featuresT = features
 
                     if scale == "norm":
                         # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
