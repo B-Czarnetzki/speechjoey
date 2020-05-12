@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, PackedSequence
 
-from joeynmt.helpers import freeze_params, vdp_LSTM
+from joeynmt.helpers import freeze_params, vdp_LSTM, LayerNormConv2d
 from joeynmt.transformer_layers import \
     TransformerEncoderLayer, PositionalEncoding
 
@@ -216,8 +216,9 @@ class SpeechRecurrentEncoder(Encoder):
         self.layer_norm = layer_norm
         self.emb_norm = emb_norm
         if self.layer_norm:
-            self.norm1 = nn.LayerNorm(hidden_size)
-            self.norm2 = nn.LayerNorm(hidden_size)
+            self.norm_lila1 = nn.LayerNorm(linear_hidden_size_1)
+            self.norm_lila2 = nn.LayerNorm(linear_hidden_size_2)
+            self.norm_conv2d = LayerNormConv2d(16)
             self.norm_out = nn.LayerNorm(
                 2 * hidden_size if bidirectional else hidden_size)
         if self.emb_norm:
@@ -230,7 +231,7 @@ class SpeechRecurrentEncoder(Encoder):
                 raise NotImmplementedError(
                     "variational_dropout is only implemented for LSTM")
             self.rnn = vdp_LSTM(4 * linear_hidden_size_2, hidden_size, num_layers, bidirectional=bidirectional, batch_first=True,
-                                idrop=rnn_input_dropout)
+                                layer_norm=self.layer_norm, idrop=rnn_input_dropout)
 
         else:
             self.rnn = rnn(
@@ -295,13 +296,21 @@ class SpeechRecurrentEncoder(Encoder):
         if self.activation == "tanh":
             lila_out1 = torch.tanh(self.lila1(embed_src))
             lila_out1 = self.input_layer_dropout(lila_out1)
+            if self.layer_norm:
+                lila_out1 = self.norm_lila1(lila_out1)
             lila_out2 = torch.tanh(self.lila2(lila_out1))
             lila_out2 = self.input_layer_dropout(lila_out2)
+            if self.layer_norm:
+                lila_out2 = self.norm_lila2(lila_out2)
         else:
             lila_out1 = torch.relu(self.lila1(embed_src))
             lila_out1 = self.input_layer_dropout(lila_out1)
+            if self.layer_norm:
+                lila_out1 = self.norm_lila1(lila_out1)
             lila_out2 = torch.relu(self.lila2(lila_out1))
             lila_out2 = self.input_layer_dropout(lila_out2)
+            if self.layer_norm:
+                lila_out2 = self.norm_lila1(lila_out2)
 
         lila_out2 = lila_out2.unsqueeze(1)
         # print("\nlila1 output shape: ", lila_out1.size())
@@ -312,7 +321,7 @@ class SpeechRecurrentEncoder(Encoder):
 
         # layer normalization
         if self.layer_norm:
-            conv_out1 = self.norm1(conv_out1)
+            conv_out1 = self.norm_conv2d(conv_out1)
 
         conv_out2 = self.conv2(conv_out1)
         # print("Convolution 2 output shape: ", conv_out2.size())
@@ -322,8 +331,8 @@ class SpeechRecurrentEncoder(Encoder):
         conv_out2 = conv_out2.flatten(start_dim=2)
 
         # layer normalization
-        if self.layer_norm:
-            conv_out2 = self.norm2(conv_out2)
+        # if self.layer_norm:
+        #   conv_out2 = self.norm2(conv_out2)
 
         # print("convolution 2 output flattend: ", conv_out2.size())
         # apply dropout to the rnn input

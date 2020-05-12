@@ -305,15 +305,22 @@ def symlink_update(target, link_name):
 
 class vdp_LSTM(nn.Module):
     def __init__(self, embedding_size, hidden_size, num_layers,
-                 idrop=0.0, batch_first=True, bidirectional=True):
+                 idrop=0.0, batch_first=True, bidirectional=True, layer_norm=False):
         super(vdp_LSTM, self).__init__()
         # Modified LockedDropout that support batch first arrangement
         self.lockdrop = LockedDropout(batch_first=batch_first)
         self.hidden_size = hidden_size
+        self.layer_norm = layer_norm
         self.idrop = idrop
         self.num_layers = num_layers
         self.bidirectional = bidirectional
         directions = 2 if bidirectional else 1
+
+        if self.layer_norm:
+            self.input_norm = nn.LayerNorm(embedding_size)
+            self.inlayer_norm = nn.LayerNorm(
+                2 * hidden_size if bidirectional else hidden_size)
+
         self.rnns = [
             nn.LSTM(embedding_size if l == 0 else hidden_size * directions,
                     hidden_size, num_layers=1, batch_first=batch_first, bidirectional=bidirectional)
@@ -324,6 +331,8 @@ class vdp_LSTM(nn.Module):
 
     def forward(self, input, conv_length):
         raw_output = self.lockdrop(input, self.idrop)
+        if self.layer_norm:
+            raw_output = self.input_norm(raw_output)
         raw_output = pack_padded_sequence(
             raw_output, conv_length, batch_first=True)
         new_hidden = []
@@ -333,6 +342,8 @@ class vdp_LSTM(nn.Module):
                 raw_output, _ = pad_packed_sequence(
                     raw_output, batch_first=True)
                 raw_output = self.lockdrop(raw_output, self.idrop)
+                if self.layer_norm:
+                    raw_output = self.inlayer_norm(raw_output)
                 raw_output = pack_padded_sequence(
                     raw_output, conv_length, batch_first=True)
             new_hidden.append(n_hidden)
@@ -356,3 +367,38 @@ class LockedDropout(nn.Module):
         mask = Variable(m, requires_grad=False) / (1 - dropout)
         mask = mask.expand_as(x)
         return mask * x
+
+
+class LayerNormConv2d(nn.Module):
+    """
+    Layer norm the just works on the channel axis for a Conv2d
+    Ref:
+    - code modified from https://github.com/Scitator/Run-Skeleton-Run/blob/master/common/modules/LayerNorm.py
+    - paper: https://arxiv.org/abs/1607.06450
+    Usage:
+        ln = LayerNormConv(3)
+        x = Variable(torch.rand((1,3,4,2)))
+        ln(x).size()
+    """
+
+    def __init__(self, features, eps=1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(
+            features)).unsqueeze(-1).unsqueeze(-1)
+        self.beta = nn.Parameter(torch.zeros(
+            features)).unsqueeze(-1).unsqueeze(-1)
+        self.eps = eps
+        self.features = features
+
+    def _check_input_dim(self, input):
+        if input.size(1) != self.gamma.nelement():
+            raise ValueError('got {}-feature tensor, expected {}'
+                             .format(input.size(1), self.features))
+
+    def forward(self, x):
+        self._check_input_dim(x)
+        x_flat = x.transpose(1, -1).contiguous().view((-1, x.size(1)))
+        mean = x_flat.mean(0).unsqueeze(-1).unsqueeze(-1).expand_as(x)
+        std = x_flat.std(0).unsqueeze(-1).unsqueeze(-1).expand_as(x)
+        # print(std.size())
+        return self.gamma.expand_as(x) * (x - mean) / (std + self.eps) + self.beta.expand_as(x)
