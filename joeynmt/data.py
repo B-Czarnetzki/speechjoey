@@ -265,6 +265,9 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
         "load_precomputed_features", False)
     save_path = data_cfg.get("save_path", None)
 
+    # option to transpose pre loaded feature dimensions
+    transpose_features = data_cfg.get("transpose_features", None)
+
     # pylint: disable=unnecessary-lambda
     if level == "char":
         def tok_fun(s): return list(s)
@@ -291,7 +294,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                               check=check_ratio, audio_level=audio_features, htk=htk,
                               scale=scale, save_computed_features=save_computed_features,
                               load_precomputed_features=load_precomputed_features,
-                              save_path=save_path, filter_pred=lambda x:
+                              save_path=save_path, transpose_features=transpose_features,
+                              filter_pred=lambda x:
                               len(vars(x)['src']) <= max_audio_length
                               and len(vars(x)['trg']) <= max_sent_length)
 
@@ -313,7 +317,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                             audio_level=audio_features, htk=htk, scale=scale,
                             save_computed_features=save_computed_features,
                             load_precomputed_features=load_precomputed_features,
-                            save_path=save_path)
+                            save_path=save_path,
+                            transpose_features=transpose_features)
     test_data = None
     if test_path is not None:
         # check if target exists
@@ -324,7 +329,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                                      audio_level=audio_features, htk=htk, scale=scale,
                                      save_computed_features=save_computed_features,
                                      load_precomputed_features=load_precomputed_features,
-                                     save_path=save_path)
+                                     save_path=save_path,
+                                     transpose_features=transpose_features)
         else:
             # no target is given -> create dataset from src only
             test_data = MonoAudioDataset(path=test_path, audio_ext=".txt",
@@ -340,7 +346,7 @@ class AudioDataset(TranslationDataset):
 
     def __init__(self, path: str, text_ext: str, audio_ext: str, sfield: Field, tfield: Field,
                  num: int, char_level: bool, train: bool, check: int, audio_level: str, htk: bool,
-                 scale: str, save_computed_features: bool, load_precomputed_features: str, save_path: str,  **kwargs) -> None:
+                 scale: str, save_computed_features: bool, load_precomputed_features: str, save_path: str, transpose_features: bool,  **kwargs) -> None:
         """Create an AudioDataset given path and fields.
 
             :param path: Prefix of path to the data files
@@ -467,7 +473,8 @@ class AudioDataset(TranslationDataset):
                         np.save(os.path.join(
                             save_path, audio_feature_file), features)
 
-                    featuresT = features
+                    print(transpose_features)
+                    featuresT = features.T if transpose_features else features
 
                     if scale == "norm":
                         # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
