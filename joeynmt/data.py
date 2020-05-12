@@ -473,7 +473,6 @@ class AudioDataset(TranslationDataset):
                         np.save(os.path.join(
                             save_path, audio_feature_file), features)
 
-                    print(transpose_features)
                     featuresT = features.T if transpose_features else features
 
                     if scale == "norm":

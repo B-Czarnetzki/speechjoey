@@ -382,7 +382,7 @@ class LayerNormConv2d(nn.Module):
     """
 
     def __init__(self, features, eps=1e-6):
-        super().__init__()
+        super(LayerNormConv2d, self).__init__()
         self.gamma = nn.Parameter(torch.ones(
             features)).unsqueeze(-1).unsqueeze(-1)
         self.beta = nn.Parameter(torch.zeros(
