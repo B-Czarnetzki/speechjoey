@@ -218,7 +218,7 @@ class SpeechRecurrentEncoder(Encoder):
         if self.layer_norm:
             self.norm_lila1 = nn.LayerNorm(linear_hidden_size_1)
             self.norm_lila2 = nn.LayerNorm(linear_hidden_size_2)
-            self.norm_conv2d = LayerNormConv2d(16)
+            #self.norm_conv2d = nn.LayerNorm(16)
             self.norm_out = nn.LayerNorm(
                 2 * hidden_size if bidirectional else hidden_size)
         if self.emb_norm:
@@ -320,8 +320,8 @@ class SpeechRecurrentEncoder(Encoder):
         # print("Convolution 1 output shape: ", conv_out1.size())
 
         # layer normalization
-        if self.layer_norm:
-            conv_out1 = self.norm_conv2d(conv_out1)
+        #if self.layer_norm:
+         #   conv_out1 = self.norm_conv2d(conv_out1)
 
         conv_out2 = self.conv2(conv_out1)
         # print("Convolution 2 output shape: ", conv_out2.size())
