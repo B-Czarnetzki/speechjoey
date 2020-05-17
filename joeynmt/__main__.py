@@ -3,12 +3,13 @@ import argparse
 from joeynmt.training import train
 from joeynmt.prediction import test
 from joeynmt.prediction import translate
+from joeynmt.filtering import filter_noise
 
 
 def main():
     ap = argparse.ArgumentParser("Joey NMT")
 
-    ap.add_argument("mode", choices=["train", "test", "translate"],
+    ap.add_argument("mode", choices=["train", "test", "translate", "filter"],
                     help="train a model or test or translate")
 
     ap.add_argument("config_path", type=str,
@@ -33,6 +34,10 @@ def main():
     elif args.mode == "translate":
         translate(cfg_file=args.config_path, ckpt=args.ckpt,
                   output_path=args.output_path)
+    elif args.mode == "filter":
+        filter_noise(cfg_file=args.config_path, ckpt=args.ckpt,
+                     output_path=args.output_path, save_attention=args.save_attention)
+
     else:
         raise ValueError("Unknown mode")
 
