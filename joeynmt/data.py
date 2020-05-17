@@ -6,7 +6,6 @@ import sys
 import random
 import os
 import os.path
-import librosa
 import torch
 import sklearn
 import math
@@ -395,76 +394,8 @@ class AudioDataset(TranslationDataset):
                             save_path, audio_feature_file))
 
                     else:
-                        if not text_line != '' and audio_line != '' and os.path.getsize(audio_line) > 44:
-                            warnings.warn(
-                                'There is an empty text line or audio file.')
-                            print("Check the text line: ", text_line,
-                                  " or audio file: ", audio_line)
-                            continue
-
-                        y, sr = librosa.load(audio_line, sr=None)
-                        # overwrite default values for the window width of 25 ms and stride of 10 ms (for sr = 16kHz)
-                        # (n_fft : length of the FFT window, hop_length : number of samples between successive frames)
-                        # default values: n_fft=2048, hop_length=512, n_mels=128, htk=False
-                        # features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num)
-                        # check which audio features should be extracted, default are mfccs
-                        if audio_level == "mel_fb":
-                            features = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=num, htk=htk)
-                        elif audio_level == "mfcc":
-                            features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=40, htk=htk)
-                        elif audio_level == "mfcc_berard_et_al":
-                            if num != 41:
-                                raise Exception(
-                                    "encoder embedding_dim must be 41 for berard_et_al feature extraction")
-
-                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num - 1, n_fft=int(sr / 25),
-                                                                 hop_length=int(sr / 100), n_mels=39, htk=htk)
-                            S, phase = librosa.magphase(librosa.stft(
-                                y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
-                            rms = librosa.feature.rms(S=S)
-
-                            # features_delta_1 = librosa.feature.delta(
-                            #    features_orig, order = 1)
-                            # features_delta_2 = librosa.feature.delta(
-                            #    features_orig, order=2)
-
-                            # rms_delta_1 = librosa.feature.delta(rms, order=1)
-                            # rms_delta_2 = librosa.feature.delta(rms, order=2)
-
-                            # features = np.concatenate(
-                            #   (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
-                            features = np.concatenate(
-                                (features_orig, rms), axis=0)
-
-                        elif audio_level == "mfcc_deltas":
-                            if num != 39:
-                                raise Exception(
-                                    "encoder embedding_dim must be 39 for 'mfcc_deltas' feature extraction")
-
-                            features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=int(
-                                sr / 40), hop_length=int(sr / 100), n_mels=80, htk=htk)
-
-                            # Only use mFCCs 1-13
-                            features_orig = features_orig[1:]
-
-                            S, phase = librosa.magphase(librosa.stft(
-                                y, n_fft=int(sr / 40), hop_length=int(sr / 100)))
-                            rms = librosa.feature.rms(S=S)
-
-                            features_delta_1 = librosa.feature.delta(
-                                features_orig, order=1)
-                            features_delta_2 = librosa.feature.delta(
-                                features_orig, order=2)
-
-                            rms_delta_1 = librosa.feature.delta(
-                                rms, order=1)
-                            rms_delta_2 = librosa.feature.delta(
-                                rms, order=2)
-
-                            features = np.concatenate(
-                                (features_orig, features_delta_1, features_delta_2, rms, rms_delta_1, rms_delta_2), axis=0)
+                        raise NotImplementedError(
+                            "yaafe feature exttraction not implemented yet")
 
                     if save_computed_features:
                         if not os.path.exists(save_path):
