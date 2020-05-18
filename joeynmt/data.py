@@ -435,8 +435,8 @@ class AudioDataset(TranslationDataset):
                         # generate a line with <unk> of given size
                         audio_dummy = "a " * (featuresT.shape[0])
                         conv_dummy = "a " * \
-                            int(round(
-                                round(featuresT.shape[0] / 2) / 2))
+                            int(math.ceil(
+                                math.ceil(featuresT.shape[0] / 2) / 2) - 1)
                     if train:
                         length_ratio = featuresT.shape[0] // (
                             len(text_line) + 1)
