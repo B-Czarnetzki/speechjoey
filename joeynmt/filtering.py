@@ -258,6 +258,8 @@ def filter_noise(cfg_file,
 
         # print(np.load("testing_ppls_list.npy"))
         if output_path is not None:
+            if not os.path.isdir(output_path):
+                os.makedirs(output_path)
             output_path_set = os.path.join(
                 output_path, data_set_name + "_perplexities.npy")
             np.save(output_path_set, ppls_sorted_list)
