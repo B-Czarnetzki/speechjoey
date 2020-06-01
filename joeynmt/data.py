@@ -303,7 +303,7 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     trg_max_size = data_cfg.get("trg_voc_limit", sys.maxsize)
     trg_min_freq = data_cfg.get("trg_voc_min_freq", 1)
 
-    trg_vocab_file = data_cfg.get(audio_lang + "_vocab", None)
+    trg_vocab_file = data_cfg.get("trg_vocab", None)
     src_vocab_file = None
     trg_vocab = build_vocab(field="trg", min_freq=trg_min_freq, max_size=trg_max_size,
                             dataset=train_data, vocab_file=trg_vocab_file)
