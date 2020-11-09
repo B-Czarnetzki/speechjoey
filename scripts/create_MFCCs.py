@@ -130,7 +130,7 @@ def do_command(filenames, process_id):
                     errorfile.write(
                         "{} seems to be an empty audio".format(file_name + "\n\n"))
 
-                with open(erroraudios", "a +") as collectionfile:
+                with open(erroraudios, "a+") as collectionfile:
                     collectionfile.write(
                         file_name + "\n")
             else:
