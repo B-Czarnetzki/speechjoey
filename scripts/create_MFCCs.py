@@ -69,19 +69,22 @@ logpath = args.logpath
 
 errorlogfile = os.path.join(logpath, "errorlog.txt")
 erroraudios = os.path.join(logpath, "erroraudios.txt")
+progresslog = os.path.join(logpath, "progress.txt")
 
 if not os.path.exists(outpath):
     os.makedirs(outpath)
 if not os.path.exists(logpath):
     os.makedirs(logpath)
 
-with open(errorlogfile, "w") as errorlog:
+with open(errorlogfile, "w") as errorfile:
     errorfile.write(
         "This file is a log for all the errors that occured while creating the MFCC features.\n")
     errorfile.write(
-        "See erroraudios.txt for a list of the audios, that caused errors.")
+        "See erroraudios.txt for a list of the audios, that caused errors.\n\n")
 
 with open(erroraudios, "w") as collectionfile:
+    pass
+with open(progresslog, "w") as progressfile:
     pass
 
 
@@ -113,10 +116,13 @@ def do_command(filenames, process_id):
     counter = 0
     for it, file_name in enumerate(filenames):
         counter += 1
-        with open("process_progress/process_{}".format(process_id), "a+") as outfile:
-            if it % 1000 == 0:
-                print("Process {} done {} out of {}".format(
-                    process_id, it, len(filenames)))
+        if it % 1000 == 0:
+            progress_message = "Process {} done {} out of {}".format(
+                process_id, it, len(filenames))
+            with open(progresslog, "a+") as progressfile:
+                print(progress_message)
+                progressfile.write(progress_message + "\n")
+
         try:
             afp.processFile(engine, os.path.join(inpath, file_name))
             feats = engine.readAllOutputs()
@@ -126,9 +132,9 @@ def do_command(filenames, process_id):
             feats = feats.astype(np.float32)
 
             if frames == 0:
-                with open(errorlogfile, "a+") as errorlog:
+                with open(errorlogfile, "a+") as errorfile:
                     errorfile.write(
-                        "{} seems to be an empty audio".format(file_name + "\n\n"))
+                        "{} seems to be an empty audio or not an audio file \n\n".format(file_name))
 
                 with open(erroraudios, "a+") as collectionfile:
                     collectionfile.write(
@@ -137,7 +143,7 @@ def do_command(filenames, process_id):
                 np.save(os.path.join(
                     outpath, file_name.replace(".wav", ".npy")), feats)
         except Exception as e:
-            with open(errorlogfile, "a+") as errorlog:
+            with open(errorlogfile, "a+") as errorfile:
                 errorfile.write(
                     "Error occured at file: {} \n".format(file_name))
                 errorfile.write("Error type: {}\n".format(type(e)))
