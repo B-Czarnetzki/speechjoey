@@ -63,8 +63,8 @@ afp = yaafelib.AudioFileProcessor()
 
 frame_counter = Counter()
 
-inpath = args.input
-outpath = args.output
+inpath = args.inpath
+outpath = args.outpath
 logpath = args.logpath
 
 errorlogfile = os.path.join(logpath, "errorlog.txt")
