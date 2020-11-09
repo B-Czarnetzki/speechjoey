@@ -13,10 +13,10 @@ import math
 import multiprocessing
 
 parser = argparse.ArgumentParser()
-parser.add_argument('input',
+parser.add_argument('inpath',
                     help='Path to folder, that contains all the wav files')
 parser.add_argument(
-    'output', help='Output path to folder, to save features to')
+    'outpath', help='Output path to folder, to save features to')
 parser.add_argument('logpath', help="Path to save log files to")
 parser.add_argument('n_cpus', help='Number of cpus for multiprocessing')
 parser.add_argument('--derivatives', action='store_true')
@@ -99,7 +99,7 @@ print("Chunk size = {}".format(chunk_size))
 print("Last chunk size = {}".format(last_chunk))
 
 
-commands_1_n - 1 = audios[:-last_chunk]
+commands_1_n = audios[:-last_chunk]
 command_n = audios[-last_chunk:]
 
 
@@ -142,7 +142,7 @@ def do_command(filenames, process_id):
                     "Error occured at file: {} \n".format(file_name))
                 errorfile.write("Error type: {}\n".format(type(e)))
                 errorfile.write("Error message: {}\n\n".format(str(e)))
-            with open(erroraudios", "a +") as collectionfile:
+            with open(erroraudios, "a+") as collectionfile:
                 collectionfile.write(
                     file_name + "\n")
         if it == len(filenames) - 1:
@@ -150,7 +150,7 @@ def do_command(filenames, process_id):
 
 
 processes = []
-for i, chunk in enumerate(chunks(commands_1_n - 1, chunk_size)):
+for i, chunk in enumerate(chunks(commands_1_n, chunk_size)):
     p = multiprocessing.Process(target=do_command, args=[chunk, i])
     processes.append(p)
 
