@@ -68,7 +68,7 @@ outpath = args.outpath
 logpath = args.logpath
 
 errorlogfile = os.path.join(logpath, "errorlog.txt")
-erroraudios = os.path.joinn(logpath, "erroraudios.txt")
+erroraudios = os.path.join(logpath, "erroraudios.txt")
 
 if not os.path.exists(outpath):
     os.makedirs(outpath)
