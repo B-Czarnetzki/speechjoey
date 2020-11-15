@@ -251,18 +251,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     max_sent_length = data_cfg.get("max_sent_length", sys.maxsize)
     max_audio_length = data_cfg.get("max_audio_length", sys.maxsize)
     number = cfg["model"]["encoder"]["embeddings"]["embedding_dim"]
-    assert number <= 80,\
-        "The number of used audio features could not be higher than the number of Mel bands. Change the encoder's embedding_dim."
     check_ratio = data_cfg.get("input_length_ratio", sys.maxsize)
-    audio_features = data_cfg["audio_features_level"]
-    htk = data_cfg["use_htk"]
     scale = data_cfg.get("scale", None)
-
-    # For train dataset saving:
-    save_computed_features = data_cfg.get("save_computed_features", False)
-    load_precomputed_features = data_cfg.get(
-        "load_precomputed_features", False)
-    save_path = data_cfg.get("save_path", None)
 
     # option to transpose pre loaded feature dimensions
     transpose_features = data_cfg.get("transpose_features", None)
@@ -289,11 +279,9 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
 
     train_data = AudioDataset(path=train_path, text_ext="." + audio_lang,
                               audio_ext=".txt", sfield=src_field, tfield=trg_field,
-                              num=number, char_level=char, train=True,
-                              check=check_ratio, audio_level=audio_features, htk=htk,
-                              scale=scale, save_computed_features=save_computed_features,
-                              load_precomputed_features=load_precomputed_features,
-                              save_path=save_path, transpose_features=transpose_features,
+                              char_level=char, train=True,
+                              check=check_ratio, scale=scale,
+                              transpose_features=transpose_features,
                               filter_pred=lambda x:
                               len(vars(x)['src']) <= max_audio_length
                               and len(vars(x)['trg']) <= max_sent_length)
@@ -311,29 +299,22 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                             dataset=train_data, vocab_file=src_vocab_file)
     # src_vocab = trg_vocab
     dev_data = AudioDataset(path=dev_path, text_ext="." + audio_lang, audio_ext=".txt",
-                            sfield=src_field, tfield=trg_field, num=number,
+                            sfield=src_field, tfield=trg_field,
                             char_level=char, train=False, check=check_ratio,
-                            audio_level=audio_features, htk=htk, scale=scale,
-                            save_computed_features=save_computed_features,
-                            load_precomputed_features=load_precomputed_features,
-                            save_path=save_path,
-                            transpose_features=transpose_features)
+                            scale=scale, transpose_features=transpose_features)
     test_data = None
     if test_path is not None:
         # check if target exists
         if os.path.isfile(test_path + "." + audio_lang):
             test_data = AudioDataset(path=test_path, text_ext="." + audio_lang,
-                                     audio_ext=".txt", sfield=src_field, tfield=trg_field, num=number,
+                                     audio_ext=".txt", sfield=src_field, tfield=trg_field,
                                      char_level=char, train=False, check=check_ratio,
-                                     audio_level=audio_features, htk=htk, scale=scale,
-                                     save_computed_features=save_computed_features,
-                                     load_precomputed_features=load_precomputed_features,
-                                     save_path=save_path,
-                                     transpose_features=transpose_features)
+                                     scale=scale, transpose_features=transpose_features)
         else:
             # no target is given -> create dataset from src only
             test_data = MonoAudioDataset(path=test_path, audio_ext=".txt",
-                                         field=src_field, num=number, char_level=char)
+                                         field=src_field, char_level=char,
+                                         scale=scale)
     trg_field.vocab = trg_vocab
     src_field.vocab = src_vocab
 
@@ -344,21 +325,19 @@ class AudioDataset(TranslationDataset):
     """Defines a dataset for speech recognition/translation."""
 
     def __init__(self, path: str, text_ext: str, audio_ext: str, sfield: Field, tfield: Field,
-                 num: int, char_level: bool, train: bool, check: int, audio_level: str, htk: bool,
-                 scale: str, save_computed_features: bool, load_precomputed_features: str, save_path: str, transpose_features: bool,  **kwargs) -> None:
+                 char_level: bool, train: bool, check: int,
+                 scale: str, transpose_features: bool,  **kwargs) -> None:
         """Create an AudioDataset given path and fields.
 
             :param path: Prefix of path to the data files
             :param text_ext: Containing the extension to path for text file
-            :param audio_ext: Containing the extension to path for audio file
+            :param audio_ext: Containing the extension to path for feature file
             :param fields: Containing the fields that will be used for text data
-            :param num: Containing the number of features to extract (= dimension of source embeddings)
             :param char_level: Containing the indicator for char level
             :param train: Containing the indicator for training set
             :param check: Containing the length ratio as a filter for training set
-            :param audio_level: Containing the extraction level of audio features extension
-            :param htk: Containing the indicator for mel filters generation
             :param scale: Containing the indicator for audio features scaling
+            :param transpose_features: Containing the indicator for transposing the audio features
             :param kwargs: Passed to the constructor of data.Dataset.
         """
         audio_field = data.RawField()
@@ -380,29 +359,14 @@ class AudioDataset(TranslationDataset):
             raise IndexError('The size of the text and audio dataset differs.')
 
         else:
-            with open(text_path) as text_file, open(audio_path) as audio_file:
-                for text_line, audio_line in zip(text_file, audio_file):
+            with open(text_path) as text_file, open(audio_path) as audio_feature_file:
+                for text_line, audio_feature_line in zip(text_file, audio_feature_file):
                     text_line = text_line.strip()
-                    audio_line = audio_line.strip()
-                    audio_name = audio_line.split("/")[-1]
-                    audio_feature_file = audio_name.replace(".wav", ".npy")
-                    if load_precomputed_features:
-                        if not os.path.exists(save_path):
-                            raise FileNotFoundError(
-                                "No Folder exists at {}, you have to save features before you can load them".format(save_path))
-                        features = np.load(os.path.join(
-                            save_path, audio_feature_file))
-
-                    else:
-                        raise NotImplementedError(
-                            "yaafe feature exttraction not implemented yet")
-
-                    if save_computed_features:
-                        if not os.path.exists(save_path):
-                            os.makedirs(save_path)
-
-                        np.save(os.path.join(
-                            save_path, audio_feature_file), features)
+                    audio_feature_file = audio_feature_line.strip()
+                    if not os.path.exists(audio_feature_file) or not audio_feature_file.endswith(".npy"):
+                        raise FileNotFoundError(
+                            "No featurefile (.npy) at {}, you have to create/save audio features before you can load them".format(audio_feature_file))
+                    features = np.load(audio_feature_file)
 
                     featuresT = features.T if transpose_features else features
 
@@ -429,8 +393,6 @@ class AudioDataset(TranslationDataset):
                         conv_dummy = "a" * \
                             int(math.ceil(
                                 math.ceil(featuresT.shape[0] / 2) / 2) - 1)
-                        # print("Conv dummy length: ", int(math.ceil(
-                        #    math.ceil(featuresT.shape[0] / 2) / 2) - 1))
                     else:
                         # generate a line with <unk> of given size
                         audio_dummy = "a " * (featuresT.shape[0])
@@ -478,14 +440,13 @@ class MonoAudioDataset(TranslationDataset):
     def sort_key(ex):
         return len(ex.src)
 
-    def __init__(self, path: str, audio_ext: str, field: Field, num: int, char_level: bool, **kwargs) -> None:
+    def __init__(self, path: str, audio_ext: str, field: Field, char_level: bool, **kwargs) -> None:
         """
         Create a MonoAudioDataset (=only sources) given path.
 
             :param path: Prefix of path to the data file
             :param audio_ext: Containing the extension to path for audio file
             :param field: Containing the field for dummy audio data
-            :param num: Containing the number of mfccs to extract (= dimension of source embeddings)
             :param char_level: Containing the indicator for char level
             :param kwargs: Passed to the constructor of data.Dataset.
         """
@@ -497,42 +458,44 @@ class MonoAudioDataset(TranslationDataset):
         with open(audio_path) as audio_file:
             for audio_line in audio_file:
                 audio_line = audio_line.strip()
-                if audio_line != '' and os.path.getsize(audio_line) > 44:
-                    y, sr = librosa.load(audio_line, sr=None)
-                    if audio_level == "mfcc":
-                        features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num, n_fft=int(
-                            sr / 40), hop_length=int(sr / 100), n_mels=80)
-                    elif audio_level == "mfcc_berard_et_al":
-                        features_orig = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=math.floor(num / 3), n_fft=int(
-                            sr / 25),  hop_length=int(sr / 100), n_mels=80, htk=htk)
-                        S, phase = librosa.magphase(librosa.stft(
-                            y, n_fft=int(sr / 25), hop_length=int(sr / 100)))
-                        rms = librosa.feature.rms(S=S)
-                        # print("\n" *7, "hallo")
-                        features_delta_1 = librosa.feature.delta(
-                            features_orig, order=1)
-                        features_delta_2 = librosa.feature.delta(
-                            features_orig, order=2)
+            for audio_line in audio_file:
+                audio_feature_file = audio_line.strip()
+                if not os.path.exists(audio_feature_file) or not audio_feature_file.endswith(".npy"):
+                    raise FileNotFoundError(
+                        "No featurefile (.npy) at {}, you have to create/save audio features before you can load them".format(audio_feature_file))
+                features = np.load(audio_feature_file)
 
-                        features = np.concatenate(
-                            (features_orig, features_delta_1, features_delta_2, rms), axis=0)
+                featuresT = features.T if transpose_features else features
 
-                    featuresT = features.T
-                    # normalize coefficients column-wise for each example
-                    featuresNorm = librosa.util.normalize(featuresT) * 0.01
-                    featureS = torch.Tensor(featuresNorm)
+                if scale == "norm":
+                    # normalize coefficients column-wise for each example normalizes (each column by aggregating over the rows)
+                    # the input array is scaled to the norm between -1 and 1
+                    featuresNorm = librosa.util.normalize(featuresT)
+                elif scale == "mean":
+                    featuresT = sklearn.preprocessing.scale(
+                        featuresT, with_std=False)  # center to the mean
+                elif scale == "unit_var":
+                    # component-wise scale to unit variance
+                    featuresT = sklearn.preprocessing.scale(
+                        featuresT, with_mean=False)
+                elif scale == "all":
+                    # center to the mean and component-wise scale to unit variance
+                    featuresT = sklearn.preprocessing.scale(featuresT)
+                featureS = torch.Tensor(featuresT)
+                if char_level:
+                    # print("FeatureT shape: ", featuresT.shape[0])
+                    # generate a line with <unk> of given size
+                    audio_dummy = "a" * (featuresT.shape[0])
 
-                    if char_level:
-                        # generate a line with <unk> of given size
-                        # print("Featue T shape: ", featuresT.shape[0])
-                        audio_dummy = "a" * (featuresT.shape[0])
-                        conv_dummy = "a" * \
-                            int(round(round(featuresT.shape[0] / 2) / 2))
-                    else:
-                        # generate a line with <unk> of given size
-                        audio_dummy = "a " * (featuresT.shape[0])
-                        conv_dummy = "a " * \
-                            int(round(round(featuresT.shape[0] / 2) / 2))
+                    conv_dummy = "a" * \
+                        int(math.ceil(
+                            math.ceil(featuresT.shape[0] / 2) / 2) - 1)
+                else:
+                    # generate a line with <unk> of given size
+                    audio_dummy = "a " * (featuresT.shape[0])
+                    conv_dummy = "a " * \
+                        int(math.ceil(
+                            math.ceil(featuresT.shape[0] / 2) / 2) - 1)
                     examples.append(data.Example.fromlist(
                         [featureS, audio_dummy, conv_dummy], fields))
         super(TranslationDataset, self).__init__(examples, fields, **kwargs)
