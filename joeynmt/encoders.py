@@ -322,13 +322,12 @@ class SpeechRecurrentEncoder(Encoder):
             conv_out2 = self.rnn_input_dropout_layer(
                 conv_out2)
 
-        packed = pack_padded_sequence(conv_out2, conv_length, batch_first=True)
-
         if self.variational_dropout:
             output, hidden = self.rnn(conv_out2, conv_length)
         else:
+            packed = pack_padded_sequence(
+                conv_out2, conv_length, batch_first=True)
             output, hidden = self.rnn(packed)
-
         # pylint: disable=unused-variable
         if isinstance(hidden, tuple):
             hidden, memory_cell = hidden

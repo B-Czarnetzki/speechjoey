@@ -304,9 +304,28 @@ def symlink_update(target, link_name):
 
 
 class vdp_LSTM(nn.Module):
+    """
+    Modified pytorch LSTM to use variational dropout and optional layernormalization
+    """
+
     def __init__(self, embedding_size, hidden_size, num_layers,
                  idrop=0.0, layerdrop=0.0, batch_first=True, bidirectional=True, layer_norm=False):
+        """
+        Create a new pytorch LSTM that uses variational dropout
+        and optionally layernormalization.
+
+        :param embedding_size: size of input embeddings
+        :param hidden_size: hidden size of lstm cells
+        :param num_layers: number of lstm layers
+        :param idrop: dropout probability for lstm input
+        :param layerdrop: dropout probability in between lstm layers
+        :param batch_first: whether batch size is in the first dimension of the input
+        :param bidirectionoal: whether lstm layers are bidirectional
+        :param layer_norm: whether to use layernormalization
+        """
+
         super(vdp_LSTM, self).__init__()
+
         # Modified LockedDropout that support batch first arrangement
         self.lockdrop = LockedDropout(batch_first=batch_first)
         self.hidden_size = hidden_size
@@ -331,6 +350,21 @@ class vdp_LSTM(nn.Module):
         self.rnns = torch.nn.ModuleList(self.rnns)
 
     def forward(self, input, conv_length):
+        """
+        Apply forward step on LSTM input
+
+        :param input: LSTM input
+        :param conv_length: length of src inputs after convolutions
+            (counting tokens before padding), shape (batch_size)
+
+        :return:
+            - raw_output: Packedsequence object containing the raw output data as Packedsequence and the batch sizes
+                - raw_output.data: output of shape (max_seq_len, num_directions * hidden_size):
+                    tensor containing the output features (h_t) from the last layer of the LSTM, for each t
+                - raw_output.batch_sizes: Tensor of integers
+                    holding information about the batch size at each sequence step
+            - hidden: h_n of shape (num_layers * num_directions, batch, hidden_size): tensor containing the hidden state for t = seq_len.
+        """
         raw_output = self.lockdrop(input, self.idrop)
         if self.layer_norm:
             raw_output = self.input_norm(raw_output)
@@ -353,11 +387,26 @@ class vdp_LSTM(nn.Module):
 
 
 class LockedDropout(nn.Module):
+    """
+    Variational dropout mask
+    https://arxiv.org/abs/1506.02557
+    tldr: Applies same dropout mask for every example in the batch.
+    """
+
     def __init__(self, batch_first):
         super().__init__()
         self.batch_first = batch_first
 
     def forward(self, x, dropout=0.0):
+        """
+        Apply a variational dropout mask to the batch
+
+        :param x: input batch
+        :param dropout: dropout probability
+
+        :return: batch with applied variational dropout mask
+        """
+
         if not self.training or not dropout:
             return x
         if self.batch_first:
