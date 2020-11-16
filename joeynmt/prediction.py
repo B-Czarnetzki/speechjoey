@@ -203,7 +203,7 @@ def test(cfg_file,
             raise FileNotFoundError("No checkpoint found in directory {}."
                                     .format(model_dir))
         try:
-            step = ckpt.split(model_dir+"/")[1].split(".ckpt")[0]
+            step = ckpt.split(model_dir + "/")[1].split(".ckpt")[0]
         except IndexError:
             step = "best"
 
@@ -219,10 +219,10 @@ def test(cfg_file,
     # load the data
     if cfg.get("speech", True):
         _, dev_data, test_data, src_vocab, trg_vocab = load_audio_data(
-        cfg=cfg)
+            cfg=cfg)
     else:
         _, dev_data, test_data, src_vocab, trg_vocab = load_data(
-        data_cfg=cfg["data"])
+            data_cfg=cfg["data"])
 
     data_to_predict = {"dev": dev_data, "test": test_data}
 
@@ -231,9 +231,11 @@ def test(cfg_file,
 
     # build model and load parameters into it
     if cfg.get("speech", True):
-        model = build_speech_model(cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
+        model = build_speech_model(
+            cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
     else:
-        model = build_model(cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
+        model = build_model(
+            cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
     model.load_state_dict(model_checkpoint["model_state"])
 
     if use_cuda:
@@ -251,18 +253,18 @@ def test(cfg_file,
 
         #pylint: disable=unused-variable
         score, loss, ppl, sources, sources_raw, references, hypotheses, \
-        hypotheses_raw, attention_scores = validate_on_data(
-            model, data=data_set, batch_size=batch_size,
-            batch_type=batch_type, level=level,
-            max_output_length=max_output_length, eval_metric=eval_metric,
-            use_cuda=use_cuda, loss_function=None, beam_size=beam_size,
-            beam_alpha=beam_alpha, logger=logger)
+            hypotheses_raw, attention_scores = validate_on_data(
+                model, data=data_set, batch_size=batch_size,
+                batch_type=batch_type, level=level,
+                max_output_length=max_output_length, eval_metric=eval_metric,
+                use_cuda=use_cuda, loss_function=None, beam_size=beam_size,
+                beam_alpha=beam_alpha, logger=logger)
         #pylint: enable=unused-variable
 
         if "trg" in data_set.fields:
             decoding_description = "Greedy decoding" if beam_size < 2 else \
                 "Beam search decoding with beam size = {} and alpha = {}".\
-                    format(beam_size, beam_alpha)
+                format(beam_size, beam_alpha)
             logger.info("%4s %s: %6.4f [%s]",
                         data_set_name, eval_metric, score, decoding_description)
         else:
@@ -273,7 +275,8 @@ def test(cfg_file,
             if attention_scores:
                 attention_name = "{}.{}.att".format(data_set_name, step)
                 attention_path = os.path.join(model_dir, attention_name)
-                logger.info("Saving attention plots. This might take a while..")
+                logger.info(
+                    "Saving attention plots. This might take a while..")
                 store_attention_plots(attentions=attention_scores,
                                       targets=hypotheses_raw,
                                       sources=data_set.src,
@@ -313,7 +316,7 @@ def translate(cfg_file, ckpt: str, output_path: str = None) -> None:
         # write src input to temporary file
         tmp_name = "tmp"
         tmp_suffix = ".src"
-        tmp_filename = tmp_name+tmp_suffix
+        tmp_filename = tmp_name + tmp_suffix
         with open(tmp_filename, "w") as tmp_file:
             tmp_file.write("{}\n".format(line))
 
@@ -326,21 +329,25 @@ def translate(cfg_file, ckpt: str, output_path: str = None) -> None:
 
         return test_data
 
+    cfg = load_config(cfg_file)
+    speech_mode = cfg.get("speech", True)
+    if speech_mode:
+        raise NotImplementedError(
+            "Translation mode isn't implemented for speech processing yet.")
+
     logger = make_logger()
 
     def _translate_data(test_data):
         """ Translates given dataset, using parameters from outer scope. """
         # pylint: disable=unused-variable
         score, loss, ppl, sources, sources_raw, references, hypotheses, \
-        hypotheses_raw, attention_scores = validate_on_data(
-            model, data=test_data, batch_size=batch_size,
-            batch_type=batch_type, level=level,
-            max_output_length=max_output_length, eval_metric="",
-            use_cuda=use_cuda, loss_function=None, beam_size=beam_size,
-            beam_alpha=beam_alpha, logger=logger)
+            hypotheses_raw, attention_scores = validate_on_data(
+                model, data=test_data, batch_size=batch_size,
+                batch_type=batch_type, level=level,
+                max_output_length=max_output_length, eval_metric="",
+                use_cuda=use_cuda, loss_function=None, beam_size=beam_size,
+                beam_alpha=beam_alpha, logger=logger)
         return hypotheses
-
-    cfg = load_config(cfg_file)
 
     # when checkpoint is not specified, take oldest from model dir
     if ckpt is None:
@@ -367,7 +374,7 @@ def translate(cfg_file, ckpt: str, output_path: str = None) -> None:
     level = data_cfg["level"]
     lowercase = data_cfg["lowercase"]
 
-    tok_fun = lambda s: list(s) if level == "char" else s.split()
+    def tok_fun(s): return list(s) if level == "char" else s.split()
 
     src_field = Field(init_token=None, eos_token=EOS_TOKEN,
                       pad_token=PAD_TOKEN, tokenize=tok_fun,
