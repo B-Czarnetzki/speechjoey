@@ -1,9 +1,0 @@
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_1.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_2.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_3.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_4.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_5.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_6.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_7.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_8.wav
-/Users/lasse/Lokale_Dokumente/Bachelorarbeit/speech_joey_bachelor/develop/raw/1.1_9.wav
