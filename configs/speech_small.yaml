@@ -8,13 +8,11 @@ data:
     src: "de"                      # src language: expected suffix of train files, e.g. "train.de"
     trg: "en"                      # trg language
     audio: "src"                   # the language for the speech processing output, default: src
-    audio_features_level: "mfcc_berard_et_al" # default: "mfcc", other option: "mel_fb"
     #scale: "None"                  # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "test/data/speechtoy/toy"          # training data
     dev: "test/data/speechtoy/toy"            # development data for validation
     test: "test/data/speechtoy/toy"           # test data for testing final model; optional
     level: "char"                   # segmentation level: either "word", "bpe" or "char" (Char highly recommended for speech)
-    #save_computed_features: True
     transpose_features: False       # U can transposoe the input features, depending on you input format
     lowercase: True                 # lowercase the data, also for validation
     max_sent_length: 150            # filter out longer sentences from training
