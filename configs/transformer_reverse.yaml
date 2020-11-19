@@ -1,5 +1,7 @@
 name: "reverse_experiment"
 
+speech: False
+
 data:
     src: "src"
     trg: "trg"
