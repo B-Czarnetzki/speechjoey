@@ -21,10 +21,6 @@ def wer(hypotheses, references):
         if score > 1:
             score = 1
         wer.append(score)
-        #print("H:", hyp, "SPLIT:", hyp.split(), "LEN:", len(hyp.split()))
-        #print("R:", ref, "SPLIT:", ref.split(), "LEN:", len(ref.split()))
-        #print(editdistance.eval(hyp.split(), ref.split())/len(ref.split()))
-    #print("wer:", sum(wer), "devided by", len(wer))
     return (sum(wer) / len(wer)) * 100
 
 
@@ -38,13 +34,11 @@ def cer(hypotheses, references):
     """
     cer = []
     for hyp, ref in zip(hypotheses, references):
-        cer.append(editdistance.eval(' '.join(hyp.split()), ref) / len(ref))
-        print("H:", hyp, "SPLIT:", ' '.join(hyp.split()), "LEN:",
-              len(hyp), " & ", len(' '.join(hyp.split())))
-        print("R:", ref, "LEN:", len(ref))
-        print(editdistance.eval(' '.join(hyp.split()), ref) / len(ref))
-    print("cer:", sum(cer), "devided by", len(cer))
-    return sum(cer) / len(cer)
+        score = editdistance.eval(' '.join(hyp.split()), ref) / len(ref)
+        if score > 1:
+            score = 1
+        cer.append(score)
+    return (sum(cer) / len(cer)) * 100
 
 
 def chrf(hypotheses, references):
