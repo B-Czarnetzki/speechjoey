@@ -237,12 +237,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     """
     # load data from files
     data_cfg = cfg["data"]
-    src_lang = data_cfg["src"]
+    src_lang = data_cfg.get("src", "txt")
     trg_lang = data_cfg["trg"]
-    if data_cfg["audio"] == "src":
-        audio_lang = src_lang
-    else:
-        audio_lang = trg_lang
     train_path = data_cfg["train"]
     dev_path = data_cfg["dev"]
     test_path = data_cfg.get("test", None)
@@ -277,8 +273,8 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
                            batch_first=True, lower=lowercase,
                            include_lengths=True)
 
-    train_data = AudioDataset(path=train_path, text_ext="." + audio_lang,
-                              audio_ext=".txt", sfield=src_field, tfield=trg_field,
+    train_data = AudioDataset(path=train_path, text_ext="." + trg_lang,
+                              audio_feature_ext="." + src_lang, sfield=src_field, tfield=trg_field,
                               char_level=char, train=True,
                               check=check_ratio, scale=scale,
                               transpose_features=transpose_features,
@@ -298,21 +294,21 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     src_vocab = build_vocab(field="src", min_freq=src_min_freq, max_size=src_max_size,
                             dataset=train_data, vocab_file=src_vocab_file)
     # src_vocab = trg_vocab
-    dev_data = AudioDataset(path=dev_path, text_ext="." + audio_lang, audio_ext=".txt",
+    dev_data = AudioDataset(path=dev_path, text_ext="." + trg_lang, audio_feature_ext="." + src_lang,
                             sfield=src_field, tfield=trg_field,
                             char_level=char, train=False, check=check_ratio,
                             scale=scale, transpose_features=transpose_features)
     test_data = None
     if test_path is not None:
         # check if target exists
-        if os.path.isfile(test_path + "." + audio_lang):
-            test_data = AudioDataset(path=test_path, text_ext="." + audio_lang,
-                                     audio_ext=".txt", sfield=src_field, tfield=trg_field,
+        if os.path.isfile(test_path + "." + trg_lang):
+            test_data = AudioDataset(path=test_path, text_ext="." + trg_lang,
+                                     audio_feature_ext="." + src_lang, sfield=src_field, tfield=trg_field,
                                      char_level=char, train=False, check=check_ratio,
                                      scale=scale, transpose_features=transpose_features)
         else:
             # no target is given -> create dataset from src only
-            test_data = MonoAudioDataset(path=test_path, audio_ext=".txt",
+            test_data = MonoAudioDataset(path=test_path, audio_ext="." + src_lang,
                                          field=src_field, char_level=char,
                                          scale=scale)
     trg_field.vocab = trg_vocab
@@ -324,14 +320,14 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
 class AudioDataset(TranslationDataset):
     """Defines a dataset for speech recognition/translation."""
 
-    def __init__(self, path: str, text_ext: str, audio_ext: str, sfield: Field, tfield: Field,
+    def __init__(self, path: str, text_ext: str, audio_feature_ext: str, sfield: Field, tfield: Field,
                  char_level: bool, train: bool, check: int,
                  scale: str, transpose_features: bool,  **kwargs) -> None:
         """Create an AudioDataset given path and fields.
 
             :param path: Prefix of path to the data files
             :param text_ext: Containing the extension to path for text file
-            :param audio_ext: Containing the extension to path for feature file
+            :param audio_feature_ext: Containing the extension to path for feature file
             :param fields: Containing the fields that will be used for text data
             :param char_level: Containing the indicator for char level
             :param train: Containing the indicator for training set
@@ -345,7 +341,7 @@ class AudioDataset(TranslationDataset):
                       ('src', sfield), ('conv', sfield)]
 
         text_path = os.path.expanduser(path + text_ext)
-        audio_path = os.path.expanduser(path + audio_ext)
+        audio_feature_path = os.path.expanduser(path + audio_feature_ext)
         examples = []
         if train:
             maxi = 1
@@ -355,11 +351,11 @@ class AudioDataset(TranslationDataset):
             log_path = os.path.expanduser(path + '_length_statistics')
             length_info = open(log_path, 'a')
 
-        if len(open(text_path).read().splitlines()) != len(open(audio_path).read().splitlines()):
+        if len(open(text_path).read().splitlines()) != len(open(audio_feature_path).read().splitlines()):
             raise IndexError('The size of the text and audio dataset differs.')
 
         else:
-            with open(text_path) as text_file, open(audio_path) as audio_feature_file:
+            with open(text_path) as text_file, open(audio_feature_path) as audio_feature_file:
                 for text_line, audio_feature_line in zip(text_file, audio_feature_file):
                     text_line = text_line.strip()
                     audio_feature_file = audio_feature_line.strip()
@@ -440,30 +436,28 @@ class MonoAudioDataset(TranslationDataset):
     def sort_key(ex):
         return len(ex.src)
 
-    def __init__(self, path: str, audio_ext: str, field: Field, char_level: bool, **kwargs) -> None:
+    def __init__(self, path: str, audio_feature_ext: str, field: Field, char_level: bool, **kwargs) -> None:
         """
         Create a MonoAudioDataset (=only sources) given path.
 
             :param path: Prefix of path to the data file
-            :param audio_ext: Containing the extension to path for audio file
+            :param audio_feature_ext: Containing the extension to path for audio feature file
             :param field: Containing the field for dummy audio data
             :param char_level: Containing the indicator for char level
             :param kwargs: Passed to the constructor of data.Dataset.
         """
         audio_field = data.RawField()
         fields = [('mfcc', audio_field), ('src', field), ('conv', field)]
-        audio_path = os.path.expanduser(path + audio_ext)
+        audio_feature_path = os.path.expanduser(path + audio_feature_ext)
         examples = []
 
-        with open(audio_path) as audio_file:
-            for audio_line in audio_file:
-                audio_line = audio_line.strip()
-            for audio_line in audio_file:
-                audio_feature_file = audio_line.strip()
-                if not os.path.exists(audio_feature_file) or not audio_feature_file.endswith(".npy"):
+        with open(audio_feature_path) as audio_feature_file:
+            for audio_feature_line in audio_feature_file:
+                audio_feature_line = audio_feature_line.strip()
+                if not os.path.exists(audio_feature_line) or not audio_feature_line.endswith(".npy"):
                     raise FileNotFoundError(
                         "No featurefile (.npy) at {}, you have to create/save audio features before you can load them".format(audio_feature_file))
-                features = np.load(audio_feature_file)
+                features = np.load(audio_feature_line)
 
                 featuresT = features.T if transpose_features else features
 

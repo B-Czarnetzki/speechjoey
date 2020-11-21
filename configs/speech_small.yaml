@@ -5,10 +5,9 @@ name: "my_experiment"
 speech: True                       # default: True
 
 data:
-    src: "de"                      # src language: expected suffix of train files, e.g. "train.de"
-    trg: "en"                      # trg language
-    audio: "src"                   # the language for the speech processing output, default: src
-    #scale: "None"                  # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
+    src: "txt"                     # src language: expected suffix of train audio feature file, default: txt
+    trg: "en"                      # trg language: expected suffix of target language sentence file.
+    #scale: "None"                 # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "test/data/speechtoy/toy"          # training data
     dev: "test/data/speechtoy/toy"            # development data for validation
     test: "test/data/speechtoy/toy"           # test data for testing final model; optional
@@ -53,7 +52,7 @@ training:                           # specify training details here
     epochs: 10                      # train for this many epochs
     validation_freq: 5              # validate after this many updates (number of mini-batches), default: 1000
     logging_freq: 10                # log the training progress after this many updates, default: 100
-    eval_metric: "wer"              # validation metric, default: "bleu", other options: "wer", "cer", "chrf", "token_accuracy", "sequence_accuracy"
+    eval_metric: "cer"              # validation metric, default: "bleu", other options: "wer", "cer", "chrf", "token_accuracy", "sequence_accuracy"
     early_stopping_metric: "loss"   # when a new high score on this metric is achieved, a checkpoint is written, when "eval_metric" (default) is maximized, when "loss" or "ppl" is minimized
     model_dir: "models/mini/speechtoy" # directory where models and validation results are stored, required
     overwrite: True                 # overwrite existing model directory, default: False. Do not set to True unless for debugging!
