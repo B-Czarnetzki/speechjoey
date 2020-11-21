@@ -146,7 +146,6 @@ def initialize_model(model: nn.Module, cfg: dict, src_padding_idx: int,
                     if "encoder" in name:
                         n = 4 if isinstance(
                             model.encoder.rnn, nn.LSTM) or isinstance(model.encoder.rnn, vdp_LSTM) else 3
-                        print(n)
                     elif "decoder" in name:
                         n = 4 if isinstance(model.decoder.rnn, nn.LSTM) else 3
                     xavier_uniform_n_(p.data, gain=gain, n=n)

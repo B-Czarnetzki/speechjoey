@@ -239,7 +239,6 @@ def build_speech_model(cfg: dict = None,
     dec_emb_dropout = cfg["decoder"]["embeddings"].get("dropout", dec_dropout)
 
     if cfg["decoder"].get("use_conditional_decoder", True):
-        print("hallo")
         decoder = ConditionalRecurrentDecoder(**cfg["decoder"], encoder=encoder,
                                               vocab_size=len(trg_vocab),
                                               emb_size=trg_embed.embedding_dim,

@@ -87,6 +87,7 @@ model:                              # specify your model architecture here
         emb_norm: False             # layer normalization layers for embeddings, default: False
     decoder:
         rnn_type: "lstm"
+        use_conditional_decoder: True # Highly recommended for speech processing, default: True
         embeddings:
             embedding_dim: 20
             scale: False
