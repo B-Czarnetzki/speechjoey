@@ -9,19 +9,18 @@ with open("requirements.txt", encoding="utf-8") as req_fp:
   install_requires = req_fp.readlines()
 
 setup(
-  name='joeynmt',
+  name='speechjoey',
   version='0.0.1',
-  description='Minimalist NMT for educational purposes',
-  author='Joost Bastings and Julia Kreutzer',
-  url='https://github.com/joeynmt/joeynmt',
+  description='JoeyNMT extended for speech processing',
+  author='Lasse Becker-Czarnetzki',
+  url='https://github.com/B-Czarnetzki/Speech-Joey',
   license='Apache License',
   install_requires=install_requires,
   packages=find_packages(exclude=[]),
   python_requires='>=3.5',
   project_urls={
-    'Documentation': 'http://joeynmt.readthedocs.io/en/latest/',
-    'Source': 'https://github.com/joeynmt/joeynmt',
-    'Tracker': 'https://github.com/joeynmt/joeynmt/issues',
+    'Source': 'https://github.com/B-Czarnetzki/Speech-Joey',
+    'Tracker': 'https://github.com/B-Czarnetzki/Speech-Joey/issues',
   },
   entry_points={
     'console_scripts': [
