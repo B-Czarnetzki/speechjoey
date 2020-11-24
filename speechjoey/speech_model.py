@@ -9,15 +9,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from joeynmt.initialization import initialize_model
-from joeynmt.embeddings import Embeddings
-from joeynmt.encoders import Encoder, SpeechRecurrentEncoder
-from joeynmt.decoders import Decoder, RecurrentDecoder, ConditionalRecurrentDecoder
-from joeynmt.constants import PAD_TOKEN, EOS_TOKEN, BOS_TOKEN
-from joeynmt.search import beam_search, greedy
-from joeynmt.vocabulary import Vocabulary
-from joeynmt.batch import Batch
-from joeynmt.helpers import ConfigurationError
+from speechjoey.initialization import initialize_model
+from speechjoey.embeddings import Embeddings
+from speechjoey.encoders import Encoder, SpeechRecurrentEncoder
+from speechjoey.decoders import Decoder, RecurrentDecoder, ConditionalRecurrentDecoder
+from speechjoey.constants import PAD_TOKEN, EOS_TOKEN, BOS_TOKEN
+from speechjoey.search import beam_search, greedy
+from speechjoey.vocabulary import Vocabulary
+from speechjoey.batch import Batch
+from speechjoey.helpers import ConfigurationError
 
 
 class SpeechModel(nn.Module):

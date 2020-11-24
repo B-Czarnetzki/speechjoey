@@ -1,11 +1,11 @@
 import torch
 import numpy as np
 
-from joeynmt.search import greedy, recurrent_greedy, transformer_greedy
-from joeynmt.search import beam_search
-from joeynmt.decoders import RecurrentDecoder, TransformerDecoder
-from joeynmt.encoders import RecurrentEncoder
-from joeynmt.embeddings import Embeddings
+from speechjoey.search import greedy, recurrent_greedy, transformer_greedy
+from speechjoey.search import beam_search
+from speechjoey.decoders import RecurrentDecoder, TransformerDecoder
+from speechjoey.encoders import RecurrentEncoder
+from speechjoey.embeddings import Embeddings
 
 from .test_helpers import TensorTestCase
 
@@ -59,7 +59,7 @@ class TestSearchTransformer(TestSearch):
         batch_size = 2
         max_output_length = 3
         src_mask, embed, decoder, encoder_output, \
-        encoder_hidden = self._build(batch_size=batch_size)
+            encoder_hidden = self._build(batch_size=batch_size)
         output, attention_scores = transformer_greedy(
             src_mask=src_mask, embed=embed, bos_index=self.bos_index,
             eos_index=self.eos_index,
@@ -77,7 +77,7 @@ class TestSearchTransformer(TestSearch):
         alpha = 1.
         max_output_length = 3
         src_mask, embed, decoder, encoder_output, \
-        encoder_hidden = self._build(batch_size=batch_size)
+            encoder_hidden = self._build(batch_size=batch_size)
         output, attention_scores = beam_search(
             size=beam_size, eos_index=self.eos_index, pad_index=self.pad_index,
             src_mask=src_mask, embed=embed, bos_index=self.bos_index,
@@ -103,7 +103,7 @@ class TestSearchTransformer(TestSearch):
         alpha = 1.
         max_output_length = 3
         src_mask, embed, decoder, encoder_output, \
-        encoder_hidden = self._build(batch_size=batch_size)
+            encoder_hidden = self._build(batch_size=batch_size)
         output, attention_scores = beam_search(
             size=beam_size, eos_index=self.eos_index, pad_index=self.pad_index,
             src_mask=src_mask, embed=embed, bos_index=self.bos_index, n_best=1,

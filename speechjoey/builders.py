@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import _LRScheduler, ReduceLROnPlateau, \
     StepLR, ExponentialLR
 from torch.optim import Optimizer
 
-from joeynmt.helpers import ConfigurationError
+from speechjoey.helpers import ConfigurationError
 
 
 def build_gradient_clipper(config: dict) -> Optional[Callable]:
@@ -111,9 +111,9 @@ def build_scheduler(config: dict, optimizer: Optimizer, scheduler_mode: str,
         - "plateau": see `torch.optim.lr_scheduler.ReduceLROnPlateau`
         - "decaying": see `torch.optim.lr_scheduler.StepLR`
         - "exponential": see `torch.optim.lr_scheduler.ExponentialLR`
-        - "noam": see `joeynmt.builders.NoamScheduler`
+        - "noam": see `speechjoey.builders.NoamScheduler`
         - "warmupexponentialdecay": see
-          `joeynmt.builders.WarmupExponentialDecayScheduler`
+          `speechjoey.builders.WarmupExponentialDecayScheduler`
 
     If no scheduler is specified, returns (None, None) which will result in
     a constant learning rate.

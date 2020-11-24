@@ -23,8 +23,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 from torchtext.data import Dataset
 import yaml
-from joeynmt.vocabulary import Vocabulary
-from joeynmt.plotting import plot_heatmap
+from speechjoey.vocabulary import Vocabulary
+from speechjoey.plotting import plot_heatmap
 
 
 class ConfigurationError(Exception):

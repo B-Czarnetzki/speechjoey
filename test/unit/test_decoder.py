@@ -1,8 +1,8 @@
 from torch.nn import GRU, LSTM
 import torch
 
-from joeynmt.decoders import RecurrentDecoder
-from joeynmt.encoders import RecurrentEncoder
+from speechjoey.decoders import RecurrentDecoder
+from speechjoey.encoders import RecurrentEncoder
 from .test_helpers import TensorTestCase
 
 

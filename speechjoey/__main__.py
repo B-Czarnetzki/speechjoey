@@ -1,9 +1,9 @@
 import argparse
 
-from joeynmt.training import train
-from joeynmt.prediction import test
-from joeynmt.prediction import translate
-from joeynmt.filtering import filter_noise
+from speechjoey.training import train
+from speechjoey.prediction import test
+from speechjoey.prediction import translate
+from speechjoey.filtering import filter_noise
 
 
 def main():

@@ -3,10 +3,10 @@ import torch
 from torch import nn
 import numpy as np
 
-from joeynmt.encoders import RecurrentEncoder
+from speechjoey.encoders import RecurrentEncoder
 from .test_helpers import TensorTestCase
-from joeynmt.model import build_model
-from joeynmt.vocabulary import Vocabulary
+from speechjoey.model import build_model
+from speechjoey.vocabulary import Vocabulary
 import copy
 
 

@@ -4,9 +4,9 @@ import torch.nn.functional as F
 from torch import Tensor
 import numpy as np
 
-from joeynmt.decoders import Decoder, TransformerDecoder
-from joeynmt.embeddings import Embeddings
-from joeynmt.helpers import tile
+from speechjoey.decoders import Decoder, TransformerDecoder
+from speechjoey.embeddings import Embeddings
+from speechjoey.helpers import tile
 
 
 __all__ = ["greedy", "transformer_greedy", "beam_search"]

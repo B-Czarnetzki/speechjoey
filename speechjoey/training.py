@@ -23,18 +23,18 @@ from torchtext.data import Dataset
 
 from tensorboardX import SummaryWriter
 
-from joeynmt.model import build_model, Model
-from joeynmt.speech_model import build_speech_model, SpeechModel
-from joeynmt.batch import Batch
-from joeynmt.helpers import log_data_info, load_config, log_cfg, \
+from speechjoey.model import build_model, Model
+from speechjoey.speech_model import build_speech_model, SpeechModel
+from speechjoey.batch import Batch
+from speechjoey.helpers import log_data_info, load_config, log_cfg, \
     store_attention_plots, load_checkpoint, make_model_dir, \
     make_logger, set_seed, symlink_update, ConfigurationError
-from joeynmt.prediction import validate_on_data
-from joeynmt.loss import XentLoss
-from joeynmt.data import load_data, load_audio_data, make_data_iter
-from joeynmt.builders import build_optimizer, build_scheduler, \
+from speechjoey.prediction import validate_on_data
+from speechjoey.loss import XentLoss
+from speechjoey.data import load_data, load_audio_data, make_data_iter
+from speechjoey.builders import build_optimizer, build_scheduler, \
     build_gradient_clipper
-from joeynmt.prediction import test
+from speechjoey.prediction import test
 
 
 # pylint: disable=too-many-instance-attributes

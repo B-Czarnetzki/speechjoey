@@ -9,7 +9,7 @@ import numpy as np
 
 from torchtext.data import Dataset
 
-from joeynmt.constants import UNK_TOKEN, DEFAULT_UNK_ID, \
+from speechjoey.constants import UNK_TOKEN, DEFAULT_UNK_ID, \
     EOS_TOKEN, BOS_TOKEN, PAD_TOKEN
 
 
@@ -47,7 +47,7 @@ class Vocabulary:
 
         :param tokens: list of tokens
         """
-        self.add_tokens(tokens=self.specials+tokens)
+        self.add_tokens(tokens=self.specials + tokens)
         assert len(self.stoi) == len(self.itos)
 
     def _from_file(self, file: str) -> None:

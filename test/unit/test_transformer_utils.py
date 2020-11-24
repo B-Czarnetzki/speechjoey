@@ -1,6 +1,6 @@
 import torch
 
-from joeynmt.transformer_layers import PositionalEncoding
+from speechjoey.transformer_layers import PositionalEncoding
 from .test_helpers import TensorTestCase
 
 

@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from joeynmt.data import MonoDataset, TranslationDataset, load_data, \
+from speechjoey.data import MonoDataset, TranslationDataset, load_data, \
     make_data_iter
 
 class TestData(unittest.TestCase):

@@ -1,6 +1,6 @@
 import torch
 
-from joeynmt.embeddings import Embeddings
+from speechjoey.embeddings import Embeddings
 from .test_helpers import TensorTestCase
 
 

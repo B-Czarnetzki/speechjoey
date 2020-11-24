@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.init import _calculate_fan_in_and_fan_out
-from joeynmt.helpers import vdp_LSTM
+from speechjoey.helpers import vdp_LSTM
 
 
 def orthogonal_rnn_init_(cell: nn.RNNBase, gain: float = 1.):

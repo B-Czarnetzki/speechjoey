@@ -12,18 +12,18 @@ import torch
 from torchtext.data import Dataset, Field
 import numpy as np
 
-from joeynmt.helpers import bpe_postprocess, load_config, make_logger,\
+from speechjoey.helpers import bpe_postprocess, load_config, make_logger,\
     get_latest_checkpoint, load_checkpoint, store_attention_plots
-from joeynmt.metrics import bleu, chrf, token_accuracy, sequence_accuracy, \
+from speechjoey.metrics import bleu, chrf, token_accuracy, sequence_accuracy, \
     wer, cer
-from joeynmt.model import build_model, Model
-from joeynmt.speech_model import build_speech_model, SpeechModel
-from joeynmt.batch import Batch
-from joeynmt.data import load_data, load_audio_data, make_data_iter, \
+from speechjoey.model import build_model, Model
+from speechjoey.speech_model import build_speech_model, SpeechModel
+from speechjoey.batch import Batch
+from speechjoey.data import load_data, load_audio_data, make_data_iter, \
     MonoDataset
-from joeynmt.constants import UNK_TOKEN, PAD_TOKEN, EOS_TOKEN
-from joeynmt.vocabulary import Vocabulary
-from joeynmt.loss import XentLoss
+from speechjoey.constants import UNK_TOKEN, PAD_TOKEN, EOS_TOKEN
+from speechjoey.vocabulary import Vocabulary
+from speechjoey.loss import XentLoss
 
 # pylint: disable=too-many-arguments,too-many-locals,no-member
 

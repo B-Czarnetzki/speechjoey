@@ -9,15 +9,15 @@ import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
 
-from joeynmt.initialization import initialize_model
-from joeynmt.embeddings import Embeddings
-from joeynmt.encoders import Encoder, RecurrentEncoder, TransformerEncoder
-from joeynmt.decoders import Decoder, RecurrentDecoder, TransformerDecoder
-from joeynmt.constants import PAD_TOKEN, EOS_TOKEN, BOS_TOKEN
-from joeynmt.search import beam_search, greedy
-from joeynmt.vocabulary import Vocabulary
-from joeynmt.batch import Batch
-from joeynmt.helpers import ConfigurationError
+from speechjoey.initialization import initialize_model
+from speechjoey.embeddings import Embeddings
+from speechjoey.encoders import Encoder, RecurrentEncoder, TransformerEncoder
+from speechjoey.decoders import Decoder, RecurrentDecoder, TransformerDecoder
+from speechjoey.constants import PAD_TOKEN, EOS_TOKEN, BOS_TOKEN
+from speechjoey.search import beam_search, greedy
+from speechjoey.vocabulary import Vocabulary
+from speechjoey.batch import Batch
+from speechjoey.helpers import ConfigurationError
 
 
 class Model(nn.Module):
@@ -57,7 +57,7 @@ class Model(nn.Module):
     # pylint: disable=arguments-differ
     def forward(self, src: Tensor, trg_input: Tensor, src_mask: Tensor,
                 src_lengths: Tensor, trg_mask: Tensor = None) -> (
-        Tensor, Tensor, Tensor, Tensor):
+            Tensor, Tensor, Tensor, Tensor):
         """
         First encodes the source sentence.
         Then produces the target one word at a time.
@@ -80,7 +80,7 @@ class Model(nn.Module):
                            trg_mask=trg_mask)
 
     def encode(self, src: Tensor, src_length: Tensor, src_mask: Tensor) \
-        -> (Tensor, Tensor):
+            -> (Tensor, Tensor):
         """
         Encodes the source sentence.
 
@@ -95,7 +95,7 @@ class Model(nn.Module):
                src_mask: Tensor, trg_input: Tensor,
                unroll_steps: int, decoder_hidden: Tensor = None,
                trg_mask: Tensor = None) \
-        -> (Tensor, Tensor, Tensor, Tensor):
+            -> (Tensor, Tensor, Tensor, Tensor):
         """
         Decode, given an encoded source sentence.
 
@@ -166,23 +166,23 @@ class Model(nn.Module):
         # greedy decoding
         if beam_size < 2:
             stacked_output, stacked_attention_scores = greedy(
-                    encoder_hidden=encoder_hidden,
-                    encoder_output=encoder_output, eos_index=self.eos_index,
-                    src_mask=batch.src_mask, embed=self.trg_embed,
-                    bos_index=self.bos_index, decoder=self.decoder,
-                    max_output_length=max_output_length)
+                encoder_hidden=encoder_hidden,
+                encoder_output=encoder_output, eos_index=self.eos_index,
+                src_mask=batch.src_mask, embed=self.trg_embed,
+                bos_index=self.bos_index, decoder=self.decoder,
+                max_output_length=max_output_length)
             # batch, time, max_src_length
         else:  # beam size
             stacked_output, stacked_attention_scores = \
-                    beam_search(
-                        size=beam_size, encoder_output=encoder_output,
-                        encoder_hidden=encoder_hidden,
-                        src_mask=batch.src_mask, embed=self.trg_embed,
-                        max_output_length=max_output_length,
-                        alpha=beam_alpha, eos_index=self.eos_index,
-                        pad_index=self.pad_index,
-                        bos_index=self.bos_index,
-                        decoder=self.decoder)
+                beam_search(
+                    size=beam_size, encoder_output=encoder_output,
+                    encoder_hidden=encoder_hidden,
+                    src_mask=batch.src_mask, embed=self.trg_embed,
+                    max_output_length=max_output_length,
+                    alpha=beam_alpha, eos_index=self.eos_index,
+                    pad_index=self.pad_index,
+                    bos_index=self.bos_index,
+                    decoder=self.decoder)
 
         return stacked_output, stacked_attention_scores
 
@@ -197,7 +197,7 @@ class Model(nn.Module):
                "\tdecoder=%s,\n" \
                "\tsrc_embed=%s,\n" \
                "\ttrg_embed=%s)" % (self.__class__.__name__, self.encoder,
-                   self.decoder, self.src_embed, self.trg_embed)
+                                    self.decoder, self.src_embed, self.trg_embed)
 
 
 def build_model(cfg: dict = None,
@@ -237,8 +237,8 @@ def build_model(cfg: dict = None,
     enc_emb_dropout = cfg["encoder"]["embeddings"].get("dropout", enc_dropout)
     if cfg["encoder"].get("type", "recurrent") == "transformer":
         assert cfg["encoder"]["embeddings"]["embedding_dim"] == \
-               cfg["encoder"]["hidden_size"], \
-               "for transformer, emb_size must be hidden_size"
+            cfg["encoder"]["hidden_size"], \
+            "for transformer, emb_size must be hidden_size"
 
         encoder = TransformerEncoder(**cfg["encoder"],
                                      emb_size=src_embed.embedding_dim,

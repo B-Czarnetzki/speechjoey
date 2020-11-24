@@ -8,10 +8,10 @@ from typing import Optional
 import torch
 import torch.nn as nn
 from torch import Tensor
-from joeynmt.attention import BahdanauAttention, LuongAttention
-from joeynmt.encoders import Encoder
-from joeynmt.helpers import freeze_params, ConfigurationError, subsequent_mask
-from joeynmt.transformer_layers import PositionalEncoding, \
+from speechjoey.attention import BahdanauAttention, LuongAttention
+from speechjoey.encoders import Encoder
+from speechjoey.helpers import freeze_params, ConfigurationError, subsequent_mask
+from speechjoey.transformer_layers import PositionalEncoding, \
     TransformerDecoderLayer
 
 
