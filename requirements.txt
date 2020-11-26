@@ -4,7 +4,7 @@ numpy<1.19.0,>=1.14.5
 setuptools>=41.0.0
 torch==1.4.0
 tensorboard>=1.15
-torchtext<0.4.0
+torchtext==0.4.0
 sacrebleu>=1.3.6
 subword-nmt
 matplotlib==3.02
