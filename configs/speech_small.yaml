@@ -5,7 +5,7 @@ name: "my_experiment"
 speech: True                       # default: True
 
 data:
-    src: "txt"                     # src language: expected suffix of train audio feature file, default: txt
+    src: "lst"                     # src language: expected suffix of train audio feature file, default: lst
     trg: "en"                      # trg language: expected suffix of target language sentence file.
     #scale: "None"                 # normalize data, default: "None", other options: "norm", "mean", "unit_var", "all"
     train: "test/data/speechtoy/toy"          # training data

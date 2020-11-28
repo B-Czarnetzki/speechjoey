@@ -16,7 +16,7 @@ featurepath = args.featurepath
 
 
 first_iteration = True
-with open(inputfile, "r") as infile, open("featurepaths.txt", "w") as outfile:
+with open(inputfile, "r") as infile, open("featurepaths.lst", "w") as outfile:
     for line in infile.readlines():
         line = line.strip()
         audio_name = line.split("/")[-1]
@@ -31,4 +31,4 @@ with open(inputfile, "r") as infile, open("featurepaths.txt", "w") as outfile:
                 str(os.path.join(current_dir, featurepath, feature_file_name)))
         first_iteration = False
 
-print("Featurespathfile created: featurepaths.txt".format())
+print("Featurespathfile created: featurepaths.lst".format())

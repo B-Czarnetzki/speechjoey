@@ -236,7 +236,7 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     """
     # load data from files
     data_cfg = cfg["data"]
-    src_lang = data_cfg.get("src", "txt")
+    src_lang = data_cfg.get("src", "lst")
     trg_lang = data_cfg["trg"]
     train_path = data_cfg["train"]
     dev_path = data_cfg["dev"]
