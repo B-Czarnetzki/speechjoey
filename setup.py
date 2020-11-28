@@ -13,14 +13,14 @@ setup(
   version='0.0.1',
   description='JoeyNMT extended for speech processing',
   author='Lasse Becker-Czarnetzki',
-  url='https://github.com/B-Czarnetzki/Speech-Joey',
+  url='https://github.com/B-Czarnetzki/speechjoey',
   license='Apache License',
   install_requires=install_requires,
   packages=find_packages(exclude=[]),
   python_requires='>=3.5',
   project_urls={
-    'Source': 'https://github.com/B-Czarnetzki/Speech-Joey',
-    'Tracker': 'https://github.com/B-Czarnetzki/Speech-Joey/issues',
+    'Source': 'https://github.com/B-Czarnetzki/speechjoey',
+    'Tracker': 'https://github.com/B-Czarnetzki/speechjoey/issues',
   },
   entry_points={
     'console_scripts': [
