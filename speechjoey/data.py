@@ -245,7 +245,6 @@ def load_audio_data(cfg: dict) -> (Dataset, Dataset, Optional[Dataset],
     lowercase = data_cfg["lowercase"]
     max_sent_length = data_cfg.get("max_sent_length", sys.maxsize)
     max_audio_length = data_cfg.get("max_audio_length", sys.maxsize)
-    number = cfg["model"]["encoder"]["embeddings"]["embedding_dim"]
     check_ratio = data_cfg.get("input_length_ratio", sys.maxsize)
     scale = data_cfg.get("scale", None)
 
