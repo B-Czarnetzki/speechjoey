@@ -133,7 +133,7 @@ You can filter your dataset by audio and sentence length.
     max_sent_length: 400
     max_audio_length: 1500`
 The audio lenght is messured in timesteps (windows).
-E.g MFCCs with 10ms windows --> 1500 windows = 15 secs audio.
+E.g MFCCs with 10ms hop size --> 1500 windows = 15 secs audio.
 
 U can reduce memory usage at the cost of training time by using the batch_multiplier.
 `training:
