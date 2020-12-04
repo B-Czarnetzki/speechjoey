@@ -58,14 +58,16 @@ For training a speech model, you need parallel data.
 SpeechJoey exspects two files per dataset.
 The source file contains the necessary information for the audio inputs.
 E.g train.lst should contain the path to an (.npy) file storing the audio features for each utterance per line.
-
-`user/yourusername/your/path/to/project/features/audio_utterance_01.npy`
-`user/yourusername/your/path/to/project/features/audio_utterance_02.npy`
+~~~
+user/yourusername/your/path/to/project/features/audio_utterance_01.npy
+user/yourusername/your/path/to/project/features/audio_utterance_02.npy
+~~~
 
 The target file contains the corresponding transcriptions/translations per line. (e.g train.en)
-
-`This is the transcription of the audio_utterance_01`
-`This is the transcription of the audio_utterance_02`
+~~~
+This is the transcription of the audio_utterance_01
+This is the transcription of the audio_utterance_02
+~~~
 
 #### Audio pre-processing
 
@@ -102,9 +104,11 @@ To properly use the speech architecture of SpeechJoey some configurations must b
 To put SpeechJoey into speech processing mode (otherwise it has joeyNMT functionality):
 
 The encoder embedding size must correspond to the number of audio features. (e.g 40 MFCCs + 1 Energy = 41 (toy example)).
-`encoder:
+~~~
+encoder:
     embeddings:
-        embedding_dim: 41`
+        embedding_dim: 41
+        ~~~
 
 Note: The speech architecture doesn't use transformers: `type: transformer` doesn't work.
 
@@ -112,16 +116,22 @@ Note: The speech architecture doesn't use transformers: `type: transformer` does
 Experiment showed that the use of the following features seems essential but you are able to not use them.
 
 The architecture is supposed to be a character based model:
-`data:
-    level: "char"`
+~~~
+data:
+    level: "char"
+    ~~~
 
 The use of variational dropout seems necessary for a good model:
-`encoder:
-    variational_dropout: True`
+~~~
+encoder:
+    variational_dropout: True
+    ~~~
 
 The speech architecture this implementation is based on uses a conditional recurrent decoder.
-`decoder:
-    use_conditional_decoder: True`
+~~~
+decoder:
+    use_conditional_decoder: True
+    ~~~
 
 
 ##### Memory controll
@@ -129,17 +139,21 @@ Training with long audio features can take a lot of memory:
 
 You can filter your dataset by audio and sentence length.
 
-`data:
+~~~
+data:
     max_sent_length: 400
-    max_audio_length: 1500`
+    max_audio_length: 1500
+    ~~~
 The audio lenght is messured in timesteps (windows).
 E.g MFCCs with 10ms hop size --> 1500 windows = 15 secs audio.
 
 U can reduce memory usage at the cost of training time by using the batch_multiplier.
-`training:
-    batch_multiplier = 4`
+~~~
+training:
+    batch_multiplier = 4
+    ~~~
 
-Tip: Don't make batch_size to small otherwise you won't benfit from variational_dropout.
+Tip: Don't make `batch_size` to small otherwise you won't benfit from variational_dropout.
 
 ### Training
 
