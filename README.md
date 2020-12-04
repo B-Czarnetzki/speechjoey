@@ -1,11 +1,11 @@
 # &nbsp; ![Speech-Joey](joey-small.png) Speech Joey
 
 ## Goal and Purpose
-Speech Joey is an extension of [JoeyNMT] (https://githubfor spee.com/joeynmt/joeynmt)
-for end-to-end automoatich speech recognition (ASR) and automatic speech translation (AST).
+Speech Joey is an extension of [JoeyNMT](https://github.com/joeynmt/joeynmt)
+for end-to-end Automoatich Speech Recognition (ASR) and Automatic Speech Translation (AST).
 It keeps joeyNMTs functionality while adding the ability to process speech inputs.
-It implements an encoder decoder architecture for speech recognition/translation based on this [paper].(https://arxiv.org/abs/1802.04200)
-See [seq2seq] (https://github.com/alex-berard/seq2seq) for an implemantation in tensorflow.
+It implements an encoder decoder architecture for speech recognition/translation based on this [paper](https://arxiv.org/abs/1802.04200).
+See [seq2seq](https://github.com/alex-berard/seq2seq) for an implemantation in tensorflow.
 
 
 ## Features
@@ -57,10 +57,10 @@ it's tutorial first in joeyNMTs [docs](https://joeynmt.readthedocs.io).
 For training a speech model, you need parallel data.
 SpeechJoey exspects two files per dataset.
 The source file contains the necessary information for the audio inputs.
-e.g train.lst should contain the path to an (.npy) file containing the audio features for each utterance per line
+E.g train.lst should contain the path to an (.npy) file storing the audio features for each utterance per line.
 
-`user/username/your/path/to/project/features/audio_utterance_01.npy`
-`user/username/your/path/to/project/features/audio_utterance_02.npy`
+`user/yourusername/your/path/to/project/features/audio_utterance_01.npy`
+`user/yourusername/your/path/to/project/features/audio_utterance_02.npy`
 
 The target file contains the corresponding transcriptions/translations per line. (e.g train.en)
 
@@ -71,18 +71,18 @@ The target file contains the corresponding transcriptions/translations per line.
 
 SpeechJoey does not extract features from audio files itself.
 Instead it exspects these features as input saved in .npy files.
-You can choose your own way/programm of choice to extract your audio features (e.g MFCCs).
+You can use your own way/programm of choice to extract your audio features (e.g MFCCs).
 Otherwise this [README](https://github.com/B-Czarnetzki/speechjoey/tree/master/scripts/audio_preprocessing) details how it can be done.
 It also explains how to create the toy data example that is used by 'configs/speech_small'.
 
 
 #### Text Pre-processing
 Before training a model on it, the transcriptions/translations are most commonly tokenized, true- or lowercased and often punctuation gets removed.
-You might also consider normalizing it in some way (e.g 52 --> fifty-two, e.g --> for example).
+You might also consider normalizing it in some way (52 --> fifty-two, e.g --> for example).
 
 The Moses toolkit provides a set of useful [scripts](https://github.com/moses-smt/mosesdecoder/tree/master/scripts) for this purpose.
 
-Though it is highly recommended to use a character base model, if you want to try a word or sub-word based model,
+Though it is highly recommended to use a character based model, if you want to try a word or sub-word based model,
 SpeechJoey supports the byte-pair-encodings (BPE) format by [subword-nmt](https://github.com/rsennrich/subword-nmt).
 
 ### Configuration
@@ -98,10 +98,10 @@ To properly use the speech architecture of SpeechJoey some configurations must b
 
 ##### Essentials
 
-To put SpeechJoey into speech processing mode (otherwise it has joeyNMT functionality):
 `speech: True`
+To put SpeechJoey into speech processing mode (otherwise it has joeyNMT functionality):
 
-The encoder embedding size must corresponds to the number of audio features. (e.g 40 MFCCs + 1 Energy = 41 (toy example))
+The encoder embedding size must correspond to the number of audio features. (e.g 40 MFCCs + 1 Energy = 41 (toy example)).
 `encoder:
     embeddings:
         embedding_dim: 41`
@@ -173,8 +173,6 @@ For training on a GPU, set `use_cuda` in the config file to `True`. This require
 
 
 ### Translating/Transcribing
-
-There are three options for testing what the model has learned.
 
 Whatever data you feed the model for translating, make sure it is properly pre-processed, just as you pre-processed the training data, e.g. tokenized and split into subwords (if working with BPEs).
 
