@@ -60,5 +60,5 @@ python3 -m speechjoey train configs/speech_small.yaml
 ```
 
 Note: speech_small.yaml uses a toy example.  
-      The specified train, dev and test sets are the same.  s
+      The specified train, dev and test sets are the same.  
       You'll ofcourse need a proper train, dev, test split for your own datasets.
