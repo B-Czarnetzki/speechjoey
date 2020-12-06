@@ -59,4 +59,6 @@ python3 scripts/audio_preprocessing/create_featurepaths.py test/data/speechtoy/t
 python3 -m speechjoey train configs/speech_small.yaml
 ```
 
-Note: speech_small.yaml uses a toy example. The specified train, dev and test sets are the same. You'll ofcourse need a proper train, dev, test split. 
+Note: speech_small.yaml uses a toy example.  
+      The specified train, dev and test sets are the same.  s
+      You'll ofcourse need a proper train, dev, test split for your own datasets.
