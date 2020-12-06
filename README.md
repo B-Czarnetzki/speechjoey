@@ -87,18 +87,16 @@ The Moses toolkit provides a set of useful [scripts](https://github.com/moses-sm
 Though it is highly recommended to use a character based model, if you want to try a word or sub-word based model,
 SpeechJoey supports the byte-pair-encodings (BPE) format by [subword-nmt](https://github.com/rsennrich/subword-nmt).
 
-### Configuration
+### Audio Configuration
 Experiments are specified in configuration files, in simple [YAML](http://yaml.org/) format. You can find examples in the `configs` directory.
 `speech_small.yaml` contains a detailed explanation of configuration options.
 
 Most importantly, the configuration contains the description of the model architecture (e.g. number of hidden units in the encoder RNN),
 paths to the training, development and test data, and the training hyperparameters (learning rate, validation frequency etc.).
 
-#### Speech configurations
-
 To properly use the speech architecture of SpeechJoey some configurations must be exact, while others are highly recomomended to use.
 
-##### Essentials
+#### Essentials
 
 Set `speech: True`
 To put SpeechJoey into speech processing mode (otherwise it has joeyNMT functionality):
@@ -112,7 +110,7 @@ encoder:
 
 Note: The speech architecture doesn't use transformers: `type: transformer` doesn't work.
 
-##### Highly recommended to use
+#### Highly recommended to use
 Experiment showed that the use of the following features seems essential but you are able to not use them.
 
 The architecture is supposed to be a character based model:
@@ -134,7 +132,7 @@ decoder:
 ```
 
 
-##### Memory controll
+#### Memory controll
 Training with long audio features can take a lot of memory:
 
 You can filter your dataset by audio and sentence length.
