@@ -3,15 +3,15 @@
 ## Goal and Purpose
 Speech Joey is an extension of [JoeyNMT](https://github.com/joeynmt/joeynmt)
 for end-to-end Automoatich Speech Recognition (ASR) and Automatic Speech Translation (AST).
-It keeps joeyNMTs functionality while adding the ability to process speech inputs.
-It implements an encoder decoder architecture for speech recognition/translation based on this [paper](https://arxiv.org/abs/1802.04200).
-See [seq2seq](https://github.com/alex-berard/seq2seq) for an implemantation in tensorflow.
-
+It keeps JoeyNMTs functionality while adding the ability to process speech inputs.
+It implements an encoder decoder architecture for speech recognition/translation based on [berard et al (2018)](https://arxiv.org/abs/1802.04200).
+See [seq2seq](https://github.com/alex-berard/seq2seq) for the original implemantation in tensorflow.
+Being an extension of JoeyNMT it also serves educational purposes, having much less code complexity than other open source speech models.
 
 ## Features
 Speech Joey implements the following features:
 - Speech Encoder using linear layers + CNNs + RNN
-- Variational Dropout in Encoder RNN [paper](https://arxiv.org/abs/1506.02557)
+- Variational Dropout in Encoder RNN [Kingma et al (2015)](https://arxiv.org/abs/1506.02557)
 - Layer Norm in encoder
 - bidirectional projection of encoder outputs
 - Conditional recurrent decoder
@@ -57,7 +57,7 @@ it's tutorial first in joeyNMTs [docs](https://joeynmt.readthedocs.io).
 For training a speech model, you need parallel data.
 SpeechJoey exspects two files per dataset.
 The source file contains the necessary information for the audio inputs.
-E.g train.lst should contain the path to an (.npy) file storing the audio features for each utterance per line.
+E.g train.lst should contain the path to an (.npy) file storing the audio features for one utterance per line.
 ```
 user/yourusername/your/path/to/project/features/audio_utterance_01.npy
 user/yourusername/your/path/to/project/features/audio_utterance_02.npy
@@ -72,7 +72,7 @@ This is the transcription of the audio_utterance_02
 #### Audio pre-processing
 
 SpeechJoey does not extract features from audio files itself.
-Instead it exspects these features as input saved in .npy files.
+Instead it exspects these features as input saved in ".npy" files.
 You can use your own way/programm of choice to extract your audio features (e.g MFCCs).
 Otherwise this [README](https://github.com/B-Czarnetzki/speechjoey/tree/master/scripts/audio_preprocessing) details how it can be done.
 It also explains how to create the toy data example that is used by 'configs/speech_small'.
@@ -84,7 +84,7 @@ You might also consider normalizing it in some way (52 --> fifty-two, e.g --> fo
 
 The Moses toolkit provides a set of useful [scripts](https://github.com/moses-smt/mosesdecoder/tree/master/scripts) for this purpose.
 
-Though it is highly recommended to use a character based model, if you want to try a word or sub-word based model,
+Though it is highly recommended to use a character based model, if you want to try a sub-word based model,
 SpeechJoey supports the byte-pair-encodings (BPE) format by [subword-nmt](https://github.com/rsennrich/subword-nmt).
 
 ### Audio Configuration
@@ -111,7 +111,7 @@ encoder:
 Note: The speech architecture doesn't use transformers: `type: transformer` doesn't work.
 
 #### Highly recommended to use
-Experiment showed that the use of the following features seems essential but you are able to not use them.
+Experiments showed that the use of the following features seems essential but you are able to not use them.
 
 The architecture is supposed to be a character based model:
 ```
@@ -198,4 +198,4 @@ with the latest/best model in the `model_dir` (or a specific checkpoint set with
 It will also evaluate the outputs with `eval_metric`.
 If `--output_path` is not specified, it will not store the translation/transcriptions, and only do the evaluation and print the results.
 
-Note: The translation mode present in joeynmt isn't implemented for SpeechJoey yet.
+Note: The translation mode present in JoeyNMT isn't implemented for SpeechJoey yet.
