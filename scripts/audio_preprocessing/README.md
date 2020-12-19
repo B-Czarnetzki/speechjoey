@@ -10,8 +10,8 @@ You need a folder containing all your audio files and execute:
 `python3 scripts/audio_preprocessing/create_audio_features.py inpath outpath logpath n_cpus`
 
 `Inpath` being the folder containing the audio files.  
-`Outpath` being the place you want to save the features.  
-`Logpath` being the place you want to save the logging files of the script.  
+`Outpath` being the place you want to save the features to.  
+`Logpath` being the place you want to save the logging files of the script to.  
 `n_cpus` being the number of cpu cores the script can use for multiprocessing.  
 
 This will by default create MFCC features for every audio in your inpath based on the settings in the script:  
@@ -27,7 +27,7 @@ The features get saved in .npy files located in your specified Outpath.
 
 The logging files will give you information on the processes progress and also collect all specified audio files that produced some error.
 These files might be corrupted, empty or not audios at all.
-You can than easily filter them out of your data.
+You can than easily filter them out of your dataset files.
 
 ## Create featurepaths file
 
