@@ -6,7 +6,7 @@ for end-to-end Automoatich Speech Recognition (ASR) and Automatic Speech Transla
 It keeps JoeyNMTs functionality while adding the ability to process speech inputs.  
 It implements an encoder decoder architecture for speech recognition/translation based on [berard et al (2018)](https://arxiv.org/abs/1802.04200).
 See [seq2seq](https://github.com/alex-berard/seq2seq) for the original implemantation in tensorflow.  
-Being an extension of JoeyNMT it also serves educational purposes, having much less code complexity than other open source speech models.
+Being an extension of JoeyNMT it also serves educational purposes, having much less code complexity than other open source speech model implementations.
 
 ## Features
 Speech Joey implements the following features:
