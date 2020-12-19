@@ -1,6 +1,10 @@
 
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+# This script is adapted from Alexander berard seq2seq feature extract script:
+# https://github.com/alex-berard/seq2seq/blob/master/scripts/speech/extract.py
+
 from __future__ import division
 import argparse
 import numpy as np
