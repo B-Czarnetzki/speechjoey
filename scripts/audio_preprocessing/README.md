@@ -6,8 +6,10 @@ First you have to install [**yaafe**](https://github.com/Yaafe/Yaafe)
 
 To create the necessary audio features use `create_audio_features.py`
 You need a folder containing all your audio files and execute:
-
-`python3 scripts/audio_preprocessing/create_audio_features.py inpath outpath logpath n_cpus`
+```
+python3 scripts/audio_preprocessing/create_audio_features.py \
+        inpath outpath logpath n_cpus
+```
 
 `Inpath` being the folder containing the audio files.  
 `Outpath` being the place you want to save the features to.  
@@ -40,7 +42,7 @@ user/yourusername/path/to/your/project/audios/audio_2.wav
 ```
 you can use:
 
-`scripts/audio_preprocessing/create_featurpaths.py audio_listfile featurefolder outfilename
+`scripts/audio_preprocessing/create_featurpaths.py audio_listfile featurefolder outfilename`
 
 `audio_listfile` being your inputfile containing the paths to the audios.  
 `featurefolder` being the folder you saved the features to when using `create_audio_features.py`.  
