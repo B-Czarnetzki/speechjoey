@@ -41,8 +41,10 @@ user/yourusername/path/to/your/project/audios/audio_1.wav
 user/yourusername/path/to/your/project/audios/audio_2.wav
 ```
 you can use:
-
-`scripts/audio_preprocessing/create_featurpaths.py audio_listfile featurefolder outfilename`
+```
+python3 scripts/audio_preprocessing/create_featurpaths.py \
+        audio_listfile featurefolder outfilename`
+```
 
 `audio_listfile` being your inputfile containing the paths to the audios.  
 `featurefolder` being the folder you saved the features to when using `create_audio_features.py`.  
