@@ -3,9 +3,9 @@
 ## Goal and Purpose
 Speech Joey is an extension of [JoeyNMT](https://github.com/joeynmt/joeynmt)
 for end-to-end Automoatich Speech Recognition (ASR) and Automatic Speech Translation (AST).
-It keeps JoeyNMTs functionality while adding the ability to process speech inputs.  
+It keeps JoeyNMTs functionality while adding the ability to process speech inputs.
 It implements an encoder decoder architecture for speech recognition/translation based on [berard et al (2018)](https://arxiv.org/abs/1802.04200).
-See [seq2seq](https://github.com/alex-berard/seq2seq) for the original implemantation in tensorflow.  
+See [seq2seq](https://github.com/alex-berard/seq2seq) for the original implemantation in tensorflow.
 Being an extension of JoeyNMT it also serves educational purposes, having much less code complexity than other open source speech model implementations.
 
 ## Features
@@ -25,7 +25,6 @@ Speech Joey implements the following features:
 
 ## Coding
 In order to keep the code clean and readable, we make use of:
-- Style checks: pylint with (mostly) PEP8 conventions, see `.pylintrc`.
 - Typing: Every function has documented input types.
 - Docstrings: Every function, class and module has docstrings describing their purpose and usage.
 
@@ -145,7 +144,7 @@ data:
 The audio lenght is messured in timesteps (windows).
 E.g MFCCs with 10ms hop size --> 1500 windows = 15 secs audio.
 
-U can reduce memory usage at the cost of training time by using the batch_multiplier.
+You can reduce memory usage at the cost of training time by using the batch_multiplier.
 ```
 training:
     batch_multiplier = 4
@@ -199,3 +198,23 @@ It will also evaluate the outputs with `eval_metric`.
 If `--output_path` is not specified, it will not store the translation/transcriptions, and only do the evaluation and print the results.
 
 Note: The translation mode present in JoeyNMT isn't implemented for SpeechJoey yet.
+
+### Filtering
+
+SpeechJoey has an option to output the perplexity of a trained model
+for every example in your training data.
+You can use this to filter your dataset for noise examples.
+
+Run: `python3 -m speechjoey filter configs/speech_small.yaml --output_path your_outpath`.
+
+This will save the perplexities per line parallel to the specified train set to
+`your_outpath/your_data_set_name_perplexities.txt`,
+
+Note: This mode is currently very unoptimized/inefficiently implemented.
+
+### TODO
+Some things that SpeechJoey currently lacks:
+
+- Merge with up-to-date JoeyNMT (mainly multi-gpu functionality)
+- Translation mode
+- Pylint checks for added speech architecture code.
