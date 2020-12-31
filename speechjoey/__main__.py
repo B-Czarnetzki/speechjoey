@@ -36,7 +36,7 @@ def main():
                   output_path=args.output_path)
     elif args.mode == "filter":
         filter_noise(cfg_file=args.config_path, ckpt=args.ckpt,
-                     output_path=args.output_path, save_attention=args.save_attention)
+                     output_path=args.output_path)
 
     else:
         raise ValueError("Unknown mode")

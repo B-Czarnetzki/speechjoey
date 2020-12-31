@@ -380,7 +380,6 @@ class AudioDataset(TranslationDataset):
                         featuresT = sklearn.preprocessing.scale(featuresT)
                     featureS = torch.Tensor(featuresT)
                     if char_level:
-                        # print("FeatureT shape: ", featuresT.shape[0])
                         # generate a line with <unk> of given size
                         audio_dummy = "a" * (featuresT.shape[0])
 
