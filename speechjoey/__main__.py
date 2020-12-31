@@ -7,7 +7,7 @@ from speechjoey.filtering import filter_noise
 
 
 def main():
-    ap = argparse.ArgumentParser("Joey NMT")
+    ap = argparse.ArgumentParser("Speech Joey")
 
     ap.add_argument("mode", choices=["train", "test", "translate", "filter"],
                     help="train a model or test or translate")
