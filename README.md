@@ -207,10 +207,10 @@ You can use this to filter your dataset for noise examples.
 
 Run: `python3 -m speechjoey filter configs/speech_small.yaml --output_path your_outpath`.
 
-This will save the perplexities per line parallel to the specified train set to
-`your_outpath/your_data_set_name_perplexities.txt`,
+This will save the perplexities per line parallel to the specified train set to  
+`your_outpath/your_data_set_name_perplexities.txt`.
 
-Note: This mode is currently very unoptimized/inefficiently implemented.
+Note: This mode is currently very inefficient (feel free to optimize).
 
 ### TODO
 Some things that SpeechJoey currently lacks:
@@ -218,3 +218,4 @@ Some things that SpeechJoey currently lacks:
 - Merge with up-to-date JoeyNMT (mainly multi-gpu functionality)
 - Translation mode
 - Pylint checks for added speech architecture code.
+- Optimize filtering (currently uses batch_size fixed to 1)
