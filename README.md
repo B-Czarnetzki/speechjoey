@@ -18,11 +18,11 @@ Special thanks [@Sariyusha](https://github.com/Sariyusha) for creating the base 
 
 ## Features
 Speech Joey implements the following features:
-- Speech Encoder using linear layers + CNNs + RNN
+- Speech Encoder using linear layers + CNNs + RNN (GRUs or LSTMs)
 - Variational Dropout in Encoder RNN [Kingma et al (2015)](https://arxiv.org/abs/1506.02557)
-- Layer Norm in encoder
-- bidirectional projection of encoder outputs
-- Conditional recurrent decoder
+- Layer normalization in Encoder
+- Bidirectional projection of encoder outputs
+- Conditional recurrent decoder (GRUs or LSTMs)
 - Attention Types: MLP, Dot, Multi-Head, Bilinear
 - Word-, BPE- and character-based input handling
 - BLEU, ChrF, WER, CER evaluation
