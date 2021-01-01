@@ -11,7 +11,7 @@ Being an extension of JoeyNMT it also serves educational purposes, having much l
 
 ## Contributors
 Joey NMT was initially developed and is maintained by [Jasmijn Bastings](https://github.com/bastings) (University of Amsterdam) and [Julia Kreutzer](https://juliakreutzer.github.io/) (Heidelberg University), now both at Google Research.  
-The SpeechJoey extension was developed by [Lasse Becker-Czarnetzki](https://github.com/B-Czarnetzki)(Heidelberg University).  
+The SpeechJoey extension was developed by [Lasse Becker-Czarnetzki] (https://github.com/B-Czarnetzki)(Heidelberg University).  
 Special thanks [@Sariyusha](https://github.com/Sariyusha) for creating the base SpeechJoey framework.
 
 
