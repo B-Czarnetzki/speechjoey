@@ -8,6 +8,14 @@ It implements an encoder decoder architecture for speech recognition/translation
 See [seq2seq](https://github.com/alex-berard/seq2seq) for the original implemantation in tensorflow.
 Being an extension of JoeyNMT it also serves educational purposes, having much less code complexity than other open source speech model implementations.
 
+
+## Contributors
+Joey NMT was initially developed and is maintained by [Jasmijn Bastings](https://github.com/bastings) (University of Amsterdam) and [Julia Kreutzer](https://juliakreutzer.github.io/) (Heidelberg University), now both at Google Research.
+The SpeechJoey extension was developed by [Lasse Becker-Czarnetzki](https://github.com/B-Czarnetzki)(Heidelberg University).
+Special thanks [@Sariyusha](https://github.com/Sariyusha) for creating the base SpeechJoey framework.
+
+
+
 ## Features
 Speech Joey implements the following features:
 - Speech Encoder using linear layers + CNNs + RNN
@@ -22,6 +30,7 @@ Speech Joey implements the following features:
 - Customizable initialization
 - Attention visualization
 - Learning curve plotting
+- Dataset filtering
 
 ## Coding
 In order to keep the code clean and readable, we make use of:
@@ -141,7 +150,7 @@ data:
     max_sent_length: 400
     max_audio_length: 1500
 ```
-The audio lenght is messured in timesteps (windows).  
+The audio lenght is messured in timesteps (windows).
 E.g MFCCs with 10 ms hop size --> 1500 windows = 15 secs audio.
 
 You can reduce memory usage at the cost of training time by using the batch_multiplier.
@@ -207,7 +216,7 @@ You can use this to filter your dataset for noise examples.
 
 Run: `python3 -m speechjoey filter configs/speech_small.yaml --output_path your_outpath`.
 
-This will save the perplexities per line parallel to the specified train set to  
+This will save the perplexities per line parallel to the specified train set to
 `your_outpath/your_data_set_name_perplexities.txt`.
 
 Note: This mode is currently very inefficient (feel free to optimize).
@@ -218,4 +227,5 @@ Some things that SpeechJoey currently lacks:
 - Merge with up-to-date JoeyNMT (mainly multi-gpu functionality)
 - Translation mode
 - Pylint checks for added speech architecture code.
+- Unit tests for speech modules
 - Optimize filtering (currently uses batch_size fixed to 1)
